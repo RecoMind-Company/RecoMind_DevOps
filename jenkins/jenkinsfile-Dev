@@ -153,6 +153,23 @@ pipeline {
         //         '''
         //     }
         // }
+        stage('ssh-keyscan') {
+            when{
+                expression { return params.MANUAL_PUBLIC_IP } 
+            }
+            
+            steps {
+                dir('Terraform/Terraform_AIVmServer') {
+                    sh '''
+                    mkdir -p ~/.ssh
+                    echo "${TF_VAR_ssh_public_key}" > ~/.ssh/id_rsa.pub
+                    echo "${private_key}" > ~/.ssh/id_rsa
+                    chmod 600 ~/.ssh/id_rsa
+                    chmod 644 ~/.ssh/id_rsa.pub
+                    '''
+                }
+            }
+        }
 
         stage('ssh connect'){
             steps {
