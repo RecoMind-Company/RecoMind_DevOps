@@ -134,14 +134,16 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p ~/.ssh
-                echo "${TF_VAR_ssh_public_key}" > ~/.ssh/id_rsa.pub
-                echo "${private_key}" | sed 's/\r$//' > ~/.ssh/id_rsa
-
+                echo "${private_key}" | tr -d '\r' > ~/.ssh/id_rsa
                 chmod 600 ~/.ssh/id_rsa
-                chmod 644 ~/.ssh/id_rsa.pub
 
+                # اصلاح format لو فيه مسافات غريبة
+                sed -i 's/ //g' ~/.ssh/id_rsa
 
+                # تأكد ان ال key يبدأ وينتهي زي ما لازم
+                grep "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/id_rsa || (echo "Wrong key format"; exit 1)
                 '''
+
             }
         }
 
@@ -150,11 +152,9 @@ pipeline {
 
         stage('ssh connect') {
             steps {
-                    sshagent(['SSH_KEY']) {
-                        sh """
-                        ssh -o StrictHostKeyChecking=no AI_Server@${ipToUse} "echo Connected successfully"
-                        """
-                    }
+                    sh """
+                    ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa AI_Server@${ipToUse} "echo Connected successfully"
+                    """ 
                 }
             
         }
