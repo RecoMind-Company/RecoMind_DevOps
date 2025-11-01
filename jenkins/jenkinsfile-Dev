@@ -130,8 +130,7 @@ pipeline {
                 }
             }
         }
-
-        stage('ssh check for Ansible'){ {
+        stage('Skip Ansible Check') {
             steps {
                 sh '''
                 mkdir -p ~/.ssh
@@ -140,9 +139,10 @@ pipeline {
                 chmod 600 ~/.ssh/id_rsa
                 chmod 644 ~/.ssh/id_rsa.pub
                 '''
-
             }
         }
+
+        
 
 
         stage('ssh connect'){
