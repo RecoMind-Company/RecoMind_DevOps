@@ -140,7 +140,7 @@ pipeline {
                 chmod 600 ~/.ssh/id_rsa
                 chmod 644 ~/.ssh/id_rsa.pub
 
-                
+
                 '''
             }
         }
@@ -149,15 +149,15 @@ pipeline {
 
 
         stage('ssh connect') {
-        steps {
-                sshagent(['SSH_KEY']) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no AI_Server@${ipToUse} "echo Connected successfully"
-                    """
+            steps {
+                    sshagent(['SSH_KEY']) {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no AI_Server@${ipToUse} "echo Connected successfully"
+                        """
+                    }
                 }
             }
-    }
-}
+        }
 
         stage('create Ansible inventory file'){
             steps {
