@@ -79,14 +79,7 @@ pipeline {
         }
 
 
-        stage('Terraform Init') {
-            steps {
-                dir('../Terraform/Terraform_AIVmServer') {
-                    sh 'rm -rf .terraform .terraform.lock.hcl'
-                    sh 'terraform init'
-                }
-            }
-        }
+        
 
         stage('ssh-keyscan') {
             
@@ -99,6 +92,15 @@ pipeline {
                     chmod 600 ~/.ssh/id_rsa
                     chmod 644 ~/.ssh/id_rsa.pub
                     '''
+                }
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir('../Terraform/Terraform_AIVmServer') {
+                    sh 'rm -rf .terraform .terraform.lock.hcl'
+                    sh 'terraform init -reconfigure'
                 }
             }
         }
