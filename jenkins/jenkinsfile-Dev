@@ -50,6 +50,7 @@ pipeline {
         TF_VAR_tenant_id        = credentials('TENANT_ID')
         TF_VAR_client_id        = credentials('CLIENT_ID')
         TF_VAR_client_secret    = credentials('CLIENT_SECRET')
+        TF_VAR_ssh_private_key  = credentials('SSH_PRIVATE_KEY')
     }
 
     stages {
@@ -84,6 +85,21 @@ pipeline {
             }
         }
 
+        stage('ssh-keyscan') {
+            
+            steps {
+                dir('../Terraform/Terraform_AIVmServer') {
+                    sh '''
+                    mkdir -p ~/.ssh
+                    echo "${{ TF_VAR_ssh_public_key }}" > ~/.ssh/id_rsa.pub
+                    echo "${{ TF_VAR_ssh_private_key }}" > ~/.ssh/id_rsa
+                    chmod 600 ~/.ssh/id_rsa
+                    chmod 644 ~/.ssh/id_rsa.pub
+                    '''
+                }
+            }
+        }
+
         stage('Terraform Plan') {
             steps {
                 dir('../Terraform/Terraform_AIVmServer') {
@@ -93,9 +109,6 @@ pipeline {
         }
 
         stage('Terraform Apply') {
-            when {
-                branch 'main'
-            }
             steps {
                 dir('../Terraform/Terraform_AIVmServer') {
                     sh 'terraform apply -auto-approve tfplan'

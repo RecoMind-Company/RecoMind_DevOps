@@ -121,7 +121,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
   admin_ssh_key {
     username   = "AI_Server"
-    public_key = v
+    public_key = var.pip_key
   }
 
   os_disk {
