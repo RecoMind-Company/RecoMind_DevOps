@@ -72,7 +72,7 @@ pipeline {
 
         stage('Terraform Validate') {
             steps {
-                dir('../Terraform/Terraform_AIVmServer') {
+                dir('Terraform/Terraform_AIVmServer') {
                     sh 'terraform validate'
                 }
             }
@@ -84,7 +84,7 @@ pipeline {
         stage('ssh-keyscan') {
             
             steps {
-                dir('../Terraform/Terraform_AIVmServer') {
+                dir('Terraform/Terraform_AIVmServer') {
                     sh '''
                     mkdir -p ~/.ssh
                     echo "${TF_VAR_ssh_public_key}" > ~/.ssh/id_rsa.pub
@@ -98,7 +98,7 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                dir('../Terraform/Terraform_AIVmServer') {
+                dir('Terraform/Terraform_AIVmServer') {
                     sh 'rm -rf .terraform .terraform.lock.hcl'
                     sh 'terraform init -reconfigure'
                 }
