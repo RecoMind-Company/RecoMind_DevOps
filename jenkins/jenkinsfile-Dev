@@ -144,15 +144,15 @@ pipeline {
             }
         }
 
-        stage('install Ansible') {
-            steps {
-                sh '''
-                sudo apt update
-                sudo apt install ansible -y
-                ansible --version
-                '''
-            }
-        }
+        // stage('install Ansible') {
+        //     steps {
+        //         sh '''
+        //         sudo apt update
+        //         sudo apt install ansible -y
+        //         ansible --version
+        //         '''
+        //     }
+        // }
 
         stage('ssh connect'){
             steps {
