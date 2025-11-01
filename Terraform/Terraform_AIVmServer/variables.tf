@@ -5,4 +5,4 @@ variable "subscription_id" {}
 variable "tenant_id" {}
 variable "client_id" {}
 variable "client_secret" {}
-variable "pip_key" {}
+variable "ssh_public_key" {}
