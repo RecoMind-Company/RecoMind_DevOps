@@ -153,7 +153,8 @@ pipeline {
         //         '''
         //     }
         // }
-        stage('ssh-keyscan') {
+
+        stage('ssh-keyscan for Ansible') {
             when{
                 expression { return params.MANUAL_PUBLIC_IP } 
             }
