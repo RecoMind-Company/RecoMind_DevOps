@@ -54,33 +54,7 @@ pipeline {
     }
 
     stages {
-        // when {
-        //     changeset "**/terraform/**"
-        // }
-                
-            
-        // stage('Checkout Repos') {
-        //     steps {
-        //         echo "Checking out DevOps scripts..."
-        //         dir('devops') {
-        //             git branch: 'main', url: 'https://github.com/username/devops.git'
-        //         }
-        //     }
-        // }
-
-
-        // stage('setup Terraform') {
-        //     steps {
-        //         echo "Setting up Terraform..."
-        //         sh '''
-        //         wget https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip
-        //         unzip terraform_1.5.7_linux_amd64.zip
-        //         sudo mv terraform /usr/local/bin/
-        //         terraform -version
-        //         '''
-        //     }
-
-        // }
+       
 
 
         stage('Terraform Init') {
@@ -147,7 +121,7 @@ pipeline {
 
         stage('Archive Outputs') {
             steps {
-                archiveArtifacts artifacts: 'devops/Terraform/outputs/server_ip.txt', fingerprint: true
+                archiveArtifacts artifacts: 'Terraform/Terraform_AIVmServer/outputs/server_ip.txt', fingerprint: true
             }
         }
 
