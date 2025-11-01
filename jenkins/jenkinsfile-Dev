@@ -79,7 +79,7 @@ pipeline {
 
         stage('Terraform Validate') {
             steps {
-                dir('Terraform/Terraform_AIVmServer') {
+                dir('../Terraform/Terraform_AIVmServer') {
                     sh 'terraform validate'
                 }
             }
