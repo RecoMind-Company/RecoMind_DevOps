@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -29,18 +28,14 @@ pipeline {
         TF_VAR_client_id        = credentials('CLIENT_ID')
         TF_VAR_client_secret    = credentials('CLIENT_SECRET')
         private_key  = credentials('SSH_Privete_KEY')
-        ipToUse = ""
     }
 
     stages {
        
-
-
         stage('Terraform Init') {
             when{
                 expression { return !params.MANUAL_PUBLIC_IP } 
             }
-
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
                     sh 'rm -rf .terraform .terraform.lock.hcl'
@@ -48,8 +43,6 @@ pipeline {
                 }
             }
         }
-
-
 
         stage('Terraform Validate') {
             when{
@@ -121,53 +114,19 @@ pipeline {
             when{
                 expression { return !params.MANUAL_PUBLIC_IP } 
             }
-
-
             steps {
                 archiveArtifacts artifacts: 'Terraform/Terraform_AIVmServer/outputs/server_ip.txt', fingerprint: true
             }
         }
 
-        stage('Run Ansible') {
+        stage('Detect IP & Save Global') {
             steps {
-               
-                dir('ansible') {
-                    script {
-                        def ipToUse = env.PUBLIC_IP ?: params.MANUAL_PUBLIC_IP
-                        if (!ipToUse) {
-                            error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
-                        }
-                        echo "Running Ansible on IP: ${ipToUse}"
-                        // sh "ansible-playbook  SetupVmPlaybook.yml -i ${ipToUse},"
+                script {
+                    env.ipToUse = env.PUBLIC_IP ?: params.MANUAL_PUBLIC_IP
+                    if (!env.ipToUse) {
+                        error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
                     }
-                }                  
-            }
-        }
-
-        // stage('install Ansible') {
-        //     steps {
-        //         sh '''
-        //         sudo apt update
-        //         sudo apt install ansible -y
-        //         ansible --version
-        //         '''
-        //     }
-        // }
-
-        stage('ssh-keyscan for Ansible') {
-            when{
-                expression { return params.MANUAL_PUBLIC_IP } 
-            }
-            
-            steps {
-                dir('Terraform/Terraform_AIVmServer') {
-                    sh '''
-                    mkdir -p ~/.ssh
-                    echo "${TF_VAR_ssh_public_key}" > ~/.ssh/id_rsa.pub
-                    echo "${private_key}" > ~/.ssh/id_rsa
-                    chmod 600 ~/.ssh/id_rsa
-                    chmod 644 ~/.ssh/id_rsa.pub
-                    '''
+                    echo "✅ Using IP: ${env.ipToUse}"
                 }
             }
         }
@@ -175,7 +134,7 @@ pipeline {
         stage('ssh connect'){
             steps {
                 sh '''
-                ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa AI_Server@${ipToUse} "echo Connected successfully"
+                ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa AI_Server@${env.ipToUse} "echo Connected successfully"
                 '''
             }
         }
@@ -185,10 +144,9 @@ pipeline {
                 sh '''
                 cat > ansible_inventory.ini << EOL
                 [all]
-                server ansible_host=${ipToUse} ansible_ssh_user=AI_Server ansible_ssh_private_key_file=~/.ssh/id_rsa
-
-                cat ansible_inventory.ini
+                server ansible_host=${env.ipToUse} ansible_ssh_user=AI_Server ansible_ssh_private_key_file=~/.ssh/id_rsa
                 EOL
+                cat ansible_inventory.ini
                 '''
             }
         }
@@ -201,7 +159,6 @@ pipeline {
             }
         }
 
-
         stage('Test connectivity to AI Server'){
             steps {
                 sh '''
@@ -210,21 +167,5 @@ pipeline {
             }
         }
 
-
-
-        
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
