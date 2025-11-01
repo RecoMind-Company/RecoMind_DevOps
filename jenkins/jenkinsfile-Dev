@@ -145,13 +145,16 @@ pipeline {
         
 
 
-        stage('ssh connect'){
-            steps {
-                sh '''
-                ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa AI_Server@${ipToUse} "echo Connected successfully"
-                '''
+        stage('ssh connect') {
+        steps {
+                sshagent(['SSH_KEY']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no AI_Server@${ipToUse} "echo Connected successfully"
+                    """
+                }
             }
-        }
+    }
+}
 
         stage('create Ansible inventory file'){
             steps {
