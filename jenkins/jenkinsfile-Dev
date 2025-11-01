@@ -3,15 +3,17 @@ pipeline {
     agent any
 
     parameters {
-        booleanParam(
-            name: 'SKIP_TERRAFORM', 
-            defaultValue: false, 
-            description: 'Skip Terraform and run Ansible only'
-        )
+        
         string(
             name: 'MANUAL_PUBLIC_IP',
             defaultValue: '',
-            description: 'Provide IP to run Ansible manually'
+            description: 'Provide IP to run Ansible manually and skip Terraform'
+        )
+
+        booleanParam(
+            name: 'SKIP_ANSIBLE', 
+            defaultValue: false, 
+            description: 'Skip Ansible and run Terraform only'
         )
     }
 
@@ -27,6 +29,7 @@ pipeline {
         TF_VAR_client_id        = credentials('CLIENT_ID')
         TF_VAR_client_secret    = credentials('CLIENT_SECRET')
         private_key  = credentials('SSH_Privete_KEY')
+        ipToUse = ""
     }
 
     stages {
@@ -50,7 +53,7 @@ pipeline {
 
         stage('Terraform Validate') {
             when{
-                expression { return !params.SKIP_TERRAFORM } 
+                expression { return !params.MANUAL_PUBLIC_IP } 
             }
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
@@ -61,7 +64,7 @@ pipeline {
 
         stage('ssh-keyscan') {
             when{
-                expression { return !params.SKIP_TERRAFORM } 
+                expression { return !params.MANUAL_PUBLIC_IP } 
             }
             
             steps {
@@ -79,7 +82,7 @@ pipeline {
 
         stage('Terraform Plan') {
             when{
-                expression { return !params.SKIP_TERRAFORM } 
+                expression { return !params.MANUAL_PUBLIC_IP } 
             }
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
@@ -90,7 +93,7 @@ pipeline {
 
         stage('Terraform Apply') {
             when{
-                expression { return !params.SKIP_TERRAFORM } 
+                expression { return !params.MANUAL_PUBLIC_IP } 
             }
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
@@ -101,7 +104,7 @@ pipeline {
 
         stage('Get Public IP') {
             when{
-                expression { return !params.SKIP_TERRAFORM } 
+                expression { return !params.MANUAL_PUBLIC_IP } 
             }
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
@@ -116,7 +119,7 @@ pipeline {
 
         stage('Archive Outputs') {
             when{
-                expression { return !params.SKIP_TERRAFORM } 
+                expression { return !params.MANUAL_PUBLIC_IP } 
             }
 
 
@@ -127,6 +130,9 @@ pipeline {
 
         stage('Run Ansible') {
             steps {
+                when{
+                    expression { return !params.SKIP_ANSIBLE } 
+                }
                 dir('ansible') {
                     script {
                         def ipToUse = env.PUBLIC_IP ?: params.MANUAL_PUBLIC_IP
@@ -136,11 +142,29 @@ pipeline {
                         echo "Running Ansible on IP: ${ipToUse}"
                         // sh "ansible-playbook  SetupVmPlaybook.yml -i ${ipToUse},"
                     }
-                }
-               
-                
+                }                  
             }
         }
+
+        stage('install Ansible') {
+            steps {
+                sh '''
+                sudo apt update
+                sudo apt install ansible -y
+                ansible --version
+                '''
+            }
+        }
+
+        stage('ssh connect'){
+            steps {
+                sh '''
+                ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa AI_Server@${ipToUse} "echo Connected successfully"
+                '''
+            }
+        }
+
+        
     }
 }
 
