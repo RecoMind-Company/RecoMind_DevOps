@@ -68,19 +68,22 @@ pipeline {
         //     }
         // }
 
-        stage('Terraform Init') {
-            steps {
-                dir('../Terraform/Terraform_AIVmServer') {
-                    sh 'rm -rf .terraform .terraform.lock.hcl'
-                    sh 'terraform init'
-                }
-            }
-        }
+
 
         stage('Terraform Validate') {
             steps {
                 dir('../Terraform/Terraform_AIVmServer') {
                     sh 'terraform validate'
+                }
+            }
+        }
+
+
+        stage('Terraform Init') {
+            steps {
+                dir('../Terraform/Terraform_AIVmServer') {
+                    sh 'rm -rf .terraform .terraform.lock.hcl'
+                    sh 'terraform init'
                 }
             }
         }
