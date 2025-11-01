@@ -1,8 +1,10 @@
 
 provider "azurerm" {
   features {}
-  subscription_id = "f4351710-a9cc-4723-9f65-0abd07ada725"
-  resource_provider_registrations = "none"
+  subscription_id = var.subscription_id
+  tenant_id       = var.tenant_id
+  client_id       = var.client_id
+  client_secret   = var.client_secret
 }
 
 # Resource Group

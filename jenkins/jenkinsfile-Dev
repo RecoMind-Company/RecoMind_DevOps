@@ -1,43 +1,132 @@
-
 pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
-            steps {
-                echo 'Cloning repository...'
-                git branch: 'main', url: 'https://github.com/example/repo.git'
-            }
-        }
-
-        stage('Build') {
+        stage('checkout') {
             steps {
                 echo 'Building project...'
-                sh 'echo Building application...'
             }
         }
 
-        stage('Test') {
+        stage('Terraform') {
+            
             steps {
-                echo 'Running tests...'
-                sh 'echo Running unit tests...'
+                script {
+                    // Initialize Terraform
+
+                    
+
+                }
             }
+
+
+
         }
 
-        stage('Deploy') {
+        stage('Ansible') {
+            when {
+                changeset "**/ansible/**"
+            }
             steps {
-                echo 'Deploying application...'
-                sh 'echo Deploying to server...'
+                echo 'Running Ansible because files in ansible/ changed...'
+                sh 'ansible-playbook ansible/site.yml'
             }
         }
     }
+}
 
-    post {
-        success {
-            echo 'Pipeline completed successfully!'
+
+pipeline {
+    agent any
+
+    environment {
+        ARM_CLIENT_ID       = credentials('CLIENT_ID')
+        ARM_CLIENT_SECRET   = credentials('CLIENT_SECRET')
+        ARM_SUBSCRIPTION_ID = credentials('SUBSCRIPTION_ID')
+        ARM_TENANT_ID       = credentials('TENANT_ID')
+
+        TF_VAR_ssh_public_key   = credentials('SSH_PUBLIC_KEY')
+        TF_VAR_subscription_id  = credentials('SUBSCRIPTION_ID')
+        TF_VAR_tenant_id        = credentials('TENANT_ID')
+        TF_VAR_client_id        = credentials('CLIENT_ID')
+        TF_VAR_client_secret    = credentials('CLIENT_SECRET')
+    }
+
+    stages {
+        when {
+            changeset "**/terraform/**"
         }
-        failure {
-            echo 'Pipeline failed!'
+                
+            
+        stage('Checkout Repos') {
+            steps {
+                echo "Checking out DevOps scripts..."
+                dir('devops') {
+                    git branch: 'main', url: 'https://github.com/username/devops.git'
+                }
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir('../Terraform/Terraform_AIVmServer') {
+                    sh 'rm -rf .terraform .terraform.lock.hcl'
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir('../Terraform/Terraform_AIVmServer') {
+                    sh 'terraform validate'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir('../Terraform/Terraform_AIVmServer') {
+                    sh 'terraform plan -out=tfplan'
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            when {
+                branch 'main'
+            }
+            steps {
+                dir('../Terraform/Terraform_AIVmServer') {
+                    sh 'terraform apply -auto-approve tfplan'
+                }
+            }
+        }
+
+        stage('Get Public IP') {
+            steps {
+                dir('../Terraform/Terraform_AIVmServer') {
+                    script {
+                        env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
+                        echo "Public IP is: ${env.PUBLIC_IP}"
+                        writeFile file: 'outputs/server_ip.txt', text: env.PUBLIC_IP
+                    }
+                }
+            }
+        }
+
+        stage('Archive Outputs') {
+            steps {
+                archiveArtifacts artifacts: 'devops/Terraform/outputs/server_ip.txt', fingerprint: true
+            }
+        }
+
+        stage('Trigger Ansible') {
+            steps {
+                build job: 'Ansible_Deployment_Job', parameters: [
+                    string(name: 'PUBLIC_IP', value: "${env.PUBLIC_IP}")
+                ]
+            }
         }
     }
 }
