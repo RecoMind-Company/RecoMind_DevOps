@@ -5,7 +5,7 @@ pipeline {
     parameters {
 
         booleanParam(
-            name: 'SKIP_ANSIBLE', 
+            name: 'SKIP_A', 
             defaultValue: false, 
             description: 'Skip Ansible and run Terraform only'
         )
