@@ -69,6 +69,30 @@ pipeline {
         // }
 
 
+        // stage('setup Terraform') {
+        //     steps {
+        //         echo "Setting up Terraform..."
+        //         sh '''
+        //         wget https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip
+        //         unzip terraform_1.5.7_linux_amd64.zip
+        //         sudo mv terraform /usr/local/bin/
+        //         terraform -version
+        //         '''
+        //     }
+
+        // }
+
+
+        stage('Terraform Init') {
+            steps {
+                dir('Terraform/Terraform_AIVmServer') {
+                    sh 'rm -rf .terraform .terraform.lock.hcl'
+                    sh 'terraform init -reconfigure'
+                }
+            }
+        }
+
+
 
         stage('Terraform Validate') {
             steps {
@@ -77,9 +101,6 @@ pipeline {
                 }
             }
         }
-
-
-        
 
         stage('ssh-keyscan') {
             
@@ -92,15 +113,6 @@ pipeline {
                     chmod 600 ~/.ssh/id_rsa
                     chmod 644 ~/.ssh/id_rsa.pub
                     '''
-                }
-            }
-        }
-
-        stage('Terraform Init') {
-            steps {
-                dir('Terraform/Terraform_AIVmServer') {
-                    sh 'rm -rf .terraform .terraform.lock.hcl'
-                    sh 'terraform init -reconfigure'
                 }
             }
         }
