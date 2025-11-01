@@ -103,14 +103,14 @@ pipeline {
 
         stage('Run Ansible') {
             steps {
-                dir('Terraform/Terraform_AIVmServer') {
+                dir('ansible') {
                     script {
                         def ipToUse = env.PUBLIC_IP ?: params.MANUAL_PUBLIC_IP
                         if (!ipToUse) {
                             error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
                         }
                         echo "Running Ansible on IP: ${ipToUse}"
-                        sh "ansible-playbook ansible/site.yml -i ${ipToUse},"
+                        sh "ansible-playbook  SetupVmPlaybook.yml -i ${ipToUse},"
                     }
                 }
                
