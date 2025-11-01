@@ -34,6 +34,10 @@ pipeline {
 
 
         stage('Terraform Init') {
+            when{
+                expression { return !params.SKIP_TERRAFORM } 
+            }
+
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
                     sh 'rm -rf .terraform .terraform.lock.hcl'
@@ -45,6 +49,9 @@ pipeline {
 
 
         stage('Terraform Validate') {
+            when{
+                expression { return !params.SKIP_TERRAFORM } 
+            }
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
                     sh 'terraform validate'
