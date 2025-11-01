@@ -164,6 +164,38 @@ pipeline {
             }
         }
 
+        stage('create Ansible inventory file'){
+            steps {
+                sh '''
+                cat > ansible_inventory.ini << EOL
+                [all]
+                server ansible_host=${ipToUse} ansible_ssh_user=AI_Server ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+                cat ansible_inventory.ini
+                EOL
+                '''
+            }
+        }
+
+        stage('run Ansible Playbook'){
+            steps {
+                sh '''
+                ansible-playbook -i ansible_inventory.ini SetupVmPlaybook.yml
+                '''
+            }
+        }
+
+
+        stage('Test connectivity to AI Server'){
+            steps {
+                sh '''
+                ansible -i ansible_inventory.ini all -m ping
+                '''
+            }
+        }
+
+        
+
         
     }
 }
