@@ -3,6 +3,12 @@ pipeline {
     agent any
 
     parameters {
+
+        booleanParam(
+            name: 'SKIP_ANSIBLE', 
+            defaultValue: false, 
+            description: 'Skip Ansible and run Terraform only'
+        )
         
         string(
             name: 'MANUAL_PUBLIC_IP',
