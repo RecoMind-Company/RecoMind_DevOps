@@ -130,9 +130,7 @@ pipeline {
 
         stage('Run Ansible') {
             steps {
-                when{
-                    expression { return !params.SKIP_ANSIBLE } 
-                }
+               
                 dir('ansible') {
                     script {
                         def ipToUse = env.PUBLIC_IP ?: params.MANUAL_PUBLIC_IP
@@ -194,7 +192,7 @@ pipeline {
             }
         }
 
-        
+
 
         
     }
