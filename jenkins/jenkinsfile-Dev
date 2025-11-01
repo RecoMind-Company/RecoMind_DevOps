@@ -110,7 +110,7 @@ pipeline {
                             error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
                         }
                         echo "Running Ansible on IP: ${ipToUse}"
-                        sh "ansible-playbook  SetupVmPlaybook.yml -i ${ipToUse},"
+                        // sh "ansible-playbook  SetupVmPlaybook.yml -i ${ipToUse},"
                     }
                 }
                
