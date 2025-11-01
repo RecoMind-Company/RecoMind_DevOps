@@ -1,5 +1,9 @@
-variable "name_rg" {}
-variable "location_rg" {}
+variable "name_rg" {
+    default = "DevOpsRG_AI"
+}
+variable "location_rg" {
+    default = "spaincentral"
+}
 
 variable "subscription_id" {}
 variable "tenant_id" {}
