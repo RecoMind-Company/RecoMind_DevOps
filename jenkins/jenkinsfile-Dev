@@ -15,7 +15,7 @@ pipeline {
         )
     }
 
-    environment {
+    environment { 
         ARM_CLIENT_ID       = credentials('CLIENT_ID')
         ARM_CLIENT_SECRET   = credentials('CLIENT_SECRET')
         ARM_SUBSCRIPTION_ID = credentials('SUBSCRIPTION_ID')
@@ -35,7 +35,7 @@ pipeline {
 
         stage('Terraform Init') {
             when{
-                expression { return !params.SKIP_TERRAFORM } 
+                expression { return !params.MANUAL_PUBLIC_IP } 
             }
 
             steps {
@@ -60,6 +60,9 @@ pipeline {
         }
 
         stage('ssh-keyscan') {
+            when{
+                expression { return !params.SKIP_TERRAFORM } 
+            }
             
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
@@ -75,6 +78,9 @@ pipeline {
         }
 
         stage('Terraform Plan') {
+            when{
+                expression { return !params.SKIP_TERRAFORM } 
+            }
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
                     sh 'terraform plan -out=tfplan'
@@ -83,6 +89,9 @@ pipeline {
         }
 
         stage('Terraform Apply') {
+            when{
+                expression { return !params.SKIP_TERRAFORM } 
+            }
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
                     sh 'terraform apply -auto-approve tfplan'
@@ -91,6 +100,9 @@ pipeline {
         }
 
         stage('Get Public IP') {
+            when{
+                expression { return !params.SKIP_TERRAFORM } 
+            }
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
                     script {
@@ -103,6 +115,11 @@ pipeline {
         }
 
         stage('Archive Outputs') {
+            when{
+                expression { return !params.SKIP_TERRAFORM } 
+            }
+
+
             steps {
                 archiveArtifacts artifacts: 'Terraform/Terraform_AIVmServer/outputs/server_ip.txt', fingerprint: true
             }
