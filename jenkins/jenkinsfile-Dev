@@ -50,7 +50,7 @@ pipeline {
         TF_VAR_tenant_id        = credentials('TENANT_ID')
         TF_VAR_client_id        = credentials('CLIENT_ID')
         TF_VAR_client_secret    = credentials('CLIENT_SECRET')
-        TF_VAR_ssh_private_key  = credentials('SSH_PRIVATE_KEY')
+        private_key  = credentials('SSH_PRIVATE_KEY')
     }
 
     stages {
@@ -59,14 +59,14 @@ pipeline {
         // }
                 
             
-        stage('Checkout Repos') {
-            steps {
-                echo "Checking out DevOps scripts..."
-                dir('devops') {
-                    git branch: 'main', url: 'https://github.com/username/devops.git'
-                }
-            }
-        }
+        // stage('Checkout Repos') {
+        //     steps {
+        //         echo "Checking out DevOps scripts..."
+        //         dir('devops') {
+        //             git branch: 'main', url: 'https://github.com/username/devops.git'
+        //         }
+        //     }
+        // }
 
         stage('Terraform Init') {
             steps {
@@ -92,7 +92,7 @@ pipeline {
                     sh '''
                     mkdir -p ~/.ssh
                     echo "${{ TF_VAR_ssh_public_key }}" > ~/.ssh/id_rsa.pub
-                    echo "${{ TF_VAR_ssh_private_key }}" > ~/.ssh/id_rsa
+                    echo "${{ private_key }}" > ~/.ssh/id_rsa
                     chmod 600 ~/.ssh/id_rsa
                     chmod 644 ~/.ssh/id_rsa.pub
                     '''
