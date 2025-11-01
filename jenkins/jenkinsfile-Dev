@@ -1,39 +1,39 @@
-pipeline {
-    agent any
+// pipeline {
+//     agent any
 
-    stages {
-        stage('checkout') {
-            steps {
-                echo 'Building project...'
-            }
-        }
+//     stages {
+//         stage('checkout') {
+//             steps {
+//                 echo 'Building project...'
+//             }
+//         }
 
-        stage('Terraform') {
+//         stage('Terraform') {
             
-            steps {
-                script {
-                    // Initialize Terraform
+//             steps {
+//                 script {
+//                     // Initialize Terraform
 
                     
 
-                }
-            }
+//                 }
+//             }
 
 
 
-        }
+//         }
 
-        stage('Ansible') {
-            when {
-                changeset "**/ansible/**"
-            }
-            steps {
-                echo 'Running Ansible because files in ansible/ changed...'
-                sh 'ansible-playbook ansible/site.yml'
-            }
-        }
-    }
-}
+//         stage('Ansible') {
+//             when {
+//                 changeset "**/ansible/**"
+//             }
+//             steps {
+//                 echo 'Running Ansible because files in ansible/ changed...'
+//                 sh 'ansible-playbook ansible/site.yml'
+//             }
+//         }
+//     }
+// }
 
 
 pipeline {
