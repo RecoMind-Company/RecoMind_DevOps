@@ -2,28 +2,6 @@
 pipeline {
     agent any
 
-    properties([
-        parameters([
-            booleanParam(
-                name: 'SKIP_TERRAFORM', 
-                defaultValue: false, 
-                description: 'Skip Terraform and run Ansible only'
-            ),
-            string(
-                name: 'MANUAL_PUBLIC_IP',
-                defaultValue: '',
-                description: 'Provide IP to run Ansible manually'
-            ),
-            booleanParam(
-                name: 'SKIP_ANSIBLE', 
-                defaultValue: false, 
-                description: 'Skip Ansible and run Terraform only'
-            )
-        ])
-    ])
-
-
-
     environment { 
         ARM_CLIENT_ID       = credentials('CLIENT_ID')
         ARM_CLIENT_SECRET   = credentials('CLIENT_SECRET')
