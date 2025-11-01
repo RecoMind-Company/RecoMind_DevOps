@@ -53,9 +53,9 @@ pipeline {
     }
 
     stages {
-        when {
-            changeset "**/terraform/**"
-        }
+        // when {
+        //     changeset "**/terraform/**"
+        // }
                 
             
         stage('Checkout Repos') {
