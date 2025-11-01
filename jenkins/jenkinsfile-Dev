@@ -105,7 +105,7 @@ pipeline {
 
         stage('Terraform Plan') {
             steps {
-                dir('../Terraform/Terraform_AIVmServer') {
+                dir('Terraform/Terraform_AIVmServer') {
                     sh 'terraform plan -out=tfplan'
                 }
             }
@@ -113,7 +113,7 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                dir('../Terraform/Terraform_AIVmServer') {
+                dir('Terraform/Terraform_AIVmServer') {
                     sh 'terraform apply -auto-approve tfplan'
                 }
             }
@@ -121,7 +121,7 @@ pipeline {
 
         stage('Get Public IP') {
             steps {
-                dir('../Terraform/Terraform_AIVmServer') {
+                dir('Terraform/Terraform_AIVmServer') {
                     script {
                         env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
                         echo "Public IP is: ${env.PUBLIC_IP}"
