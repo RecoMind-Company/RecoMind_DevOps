@@ -161,18 +161,18 @@ pipeline {
         stage('create Ansible inventory file') {
             steps {
                 dir('ansible') {
-                    sh '''
-                    cat > ansible_inventory.ini <<EOL
+                    sh """#!/bin/bash
+                    rm -f ansible_inventory.ini
+                    cat <<'EOF' > ansible_inventory.ini
                     [all]
                     server ansible_host=${ipToUse} ansible_user=AI_Server ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/id_rsa
-                    EOL
-
-                    '''
-
+                    EOF
+                    cat ansible_inventory.ini
+                    """
                 }
-                
             }
         }
+
 
         stage('run Ansible Playbook') {
 
