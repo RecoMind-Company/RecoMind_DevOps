@@ -185,7 +185,13 @@ pipeline {
 
         stage('Test connectivity to AI Server') {
             steps {
-                sh 'ansible -i ansible_inventory.ini all -m ping'
+                dir('ansible') {
+                    sh '''
+                    echo "Testing connectivity to AI Server via Ansible"
+                    ansible all -i ansible_inventory.ini -m ping
+                    '''
+                }
+                
             }
         }
 
