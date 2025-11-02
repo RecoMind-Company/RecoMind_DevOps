@@ -130,33 +130,45 @@ pipeline {
                 }
             }
         }
-        stage('Skip Ansible Check') {
+        
+        stage('Setup SSH Key') {
             steps {
                 sh '''
                 mkdir -p ~/.ssh
+                
+                # حفظ المفتاح مع إزالة carriage return فقط
                 echo "${private_key}" | tr -d '\r' > ~/.ssh/id_rsa
+                
+                # تعيين الصلاحيات
                 chmod 600 ~/.ssh/id_rsa
-
-                # اصلاح format لو فيه مسافات غريبة
-                sed -i 's/ //g' ~/.ssh/id_rsa
-
-                # تأكد ان ال key يبدأ وينتهي زي ما لازم
-                grep "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/id_rsa || (echo "Wrong key format"; exit 1)
+                
+                # التحقق من وجود المفتاح وصيغته
+                if [ -s ~/.ssh/id_rsa ]; then
+                    echo "✅ SSH key file created successfully"
+                    echo "First line of key:"
+                    head -1 ~/.ssh/id_rsa
+                    
+                    # التحقق من صيغة المفتاح
+                    if grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/id_rsa; then
+                        echo "✅ SSH key format is valid"
+                    else
+                        echo "❌ Invalid SSH key format - key must start with BEGIN PRIVATE KEY"
+                        exit 1
+                    fi
+                else
+                    echo "❌ SSH key file is empty or not created"
+                    exit 1
+                fi
                 '''
-
             }
         }
 
-        
-
-
         stage('ssh connect') {
             steps {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa AI_Server@${ipToUse} "echo Connected successfully"
-                    """ 
-                }
-            
+                sh """
+                ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa AI_Server@${ipToUse} "echo Connected successfully"
+                """ 
+            }
         }
 
         stage('create Ansible inventory file'){
