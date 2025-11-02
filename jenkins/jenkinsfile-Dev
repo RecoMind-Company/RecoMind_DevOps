@@ -27,7 +27,6 @@ pipeline {
         TF_VAR_tenant_id        = credentials('TENANT_ID')
         TF_VAR_client_id        = credentials('CLIENT_ID')
         TF_VAR_client_secret    = credentials('CLIENT_SECRET')
-        private_key  = credentials('SSH_USER')
     }
 
     stages {
@@ -62,13 +61,20 @@ pipeline {
             
             steps {
                 dir('Terraform/Terraform_AIVmServer') {
-                    sh '''
-                    mkdir -p ~/.ssh
-                    echo "${TF_VAR_ssh_public_key}" > ~/.ssh/id_rsa.pub
-                    echo "${private_key}" > ~/.ssh/id_rsa
-                    chmod 600 ~/.ssh/id_rsa
-                    chmod 644 ~/.ssh/id_rsa.pub
-                    '''
+                    withCredentials([
+                        sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+                    ]) {
+                        sh '''
+                        mkdir -p ~/.ssh
+                        cp "$SSH_KEY_FILE" ~/.ssh/id_rsa
+                        chmod 600 ~/.ssh/id_rsa
+                        
+                        echo "${TF_VAR_ssh_public_key}" > ~/.ssh/id_rsa.pub
+                        chmod 644 ~/.ssh/id_rsa.pub
+                        
+                        echo "✅ SSH keys copied successfully"
+                        '''
+                    }
                 }
             }
         }
@@ -131,43 +137,44 @@ pipeline {
             }
         }
         
-        stage('Setup SSH Key') {
+        stage('Setup SSH Key for Ansible') {
             steps {
-                sh '''
-                mkdir -p ~/.ssh
-                
-                # حفظ المفتاح مع إزالة carriage return فقط
-                echo "${private_key}" | tr -d '\r' > ~/.ssh/id_rsa
-                
-                # تعيين الصلاحيات
-                chmod 600 ~/.ssh/id_rsa
-                
-                # التحقق من وجود المفتاح وصيغته
-                if [ -s ~/.ssh/id_rsa ]; then
-                    echo "✅ SSH key file created successfully"
-                    echo "First line of key:"
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+                ]) {
+                    sh '''
+                    mkdir -p ~/.ssh
+                    
+                    # نسخ المفتاح من الملف المؤقت
+                    cp "$SSH_KEY_FILE" ~/.ssh/id_rsa
+                    chmod 600 ~/.ssh/id_rsa
+                    
+                    echo "✅ SSH key setup complete"
+                    echo "Key format check:"
                     head -1 ~/.ssh/id_rsa
                     
-                    # التحقق من صيغة المفتاح
-                    if grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/id_rsa; then
-                        echo "✅ SSH key format is valid"
+                    # التحقق من صحة المفتاح
+                    if ssh-keygen -y -f ~/.ssh/id_rsa > /dev/null 2>&1; then
+                        echo "✅ SSH key is valid"
                     else
-                        echo "❌ Invalid SSH key format - key must start with BEGIN PRIVATE KEY"
+                        echo "❌ SSH key validation failed"
                         exit 1
                     fi
-                else
-                    echo "❌ SSH key file is empty or not created"
-                    exit 1
-                fi
-                '''
+                    '''
+                }
             }
         }
 
         stage('ssh connect') {
             steps {
-                sh """
-                ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa AI_Server@${ipToUse} "echo Connected successfully"
-                """ 
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+                ]) {
+                    sh '''
+                    echo "Testing SSH connection to ${ipToUse}"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" AI_Server@${ipToUse} "echo Connected successfully"
+                    '''
+                }
             }
         }
 
