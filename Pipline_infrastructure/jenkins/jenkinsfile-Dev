@@ -176,8 +176,8 @@ pipeline {
         stage('run Ansible Playbook') {
 
             steps {
-               dir('Pipline_infrastructure/ansible') {
-                   sh 'ansible-playbook -i ansible_inventory.ini SetupVmPlaybook.yml'
+                dir('Pipline_infrastructure/ansible') {
+                    sh 'ansible-playbook -i ansible_inventory.ini SetupVmPlaybook.yml'
                 }
             }
             

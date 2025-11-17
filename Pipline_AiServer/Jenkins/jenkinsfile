@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB = credentials('dockerhub_creds')
+        SONAR_AUTH_TOKEN = credentials('SonarQube_jenkins')
+        IMAGE_NAME = "hossamtaha9/data_embedding"
+        TAG = "latest"
+    }
+
+    stages {
+
+        stage('OWASP Dependency Check') {
+            steps {
+                sh """
+                    dependency-check.sh --project data_embedding --scan . --format XML --out dependency-report
+                """
+            }
+        }
+
+        stage('SonarQube Scan') {
+            steps {
+                withSonarQubeEnv('SonarQube_Server') {
+                    sh """
+                        sonar-scanner \
+                        -Dsonar.projectKey=data_embedding \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://172.30.100.44:9000 \
+                        -Dsonar.login=$SONAR_AUTH_TOKEN
+                    """
+                }
+            }
+        }
+
+        stage("Build Docker Image") {
+            steps {
+                sh "docker build -t $IMAGE_NAME:$TAG ."
+            }
+        }
+
+        stage('Trivy Security Scan') {
+            steps {
+                sh """
+                    trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME:$TAG
+                """
+            }
+        }
+
+        stage('DockerHub Login') {
+            steps {
+                sh "echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin"
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh "docker push $IMAGE_NAME:$TAG"
+            }
+        }
+
+        stage('Trigger CD Pipeline') {
+            steps {
+                build job: "CD_Job_Name", wait: false
+            }
+        }
+    }
+}
+
+
+
