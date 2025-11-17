@@ -19,6 +19,8 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
+
+                sh'mkdir -p dependency-check-report'
                 // استخدام Plugin بدلاً من CLI
                 dependencyCheck additionalArguments: '--scan . --format XML --out dependency-report',
                                 odcInstallation: 'OWASP-Dependency' // الاسم اللي اخترته في Jenkins
