@@ -21,7 +21,7 @@ pipeline {
             steps {
                 // استخدام Plugin بدلاً من CLI
                 dependencyCheck additionalArguments: '--scan . --format XML --out dependency-report',
-                                odcInstallation: 'Default' // الاسم اللي اخترته في Jenkins
+                                odcInstallation: 'OWASP-Dependency' // الاسم اللي اخترته في Jenkins
             }
         }
 
