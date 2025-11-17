@@ -73,7 +73,7 @@ pipeline {
         stage('Terraform Plan') {
             when { expression { return !params.MANUAL_PUBLIC_IP } }
             steps {
-                dir('Terraform/Terraform_AIVmServer') {
+                dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
                     sh 'terraform plan -out=tfplan'
                 }
             }
