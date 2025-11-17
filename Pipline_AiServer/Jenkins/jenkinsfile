@@ -35,14 +35,15 @@ pipeline {
 
         stage('SonarQube Scan') {
             steps {
-                withSonarQubeEnv('SonarQube_Server') {
+                script {
+                // استخدام الـ tool داخل script block
                     def scannerHome = tool 'SonarQube_Scanner'
                     sh """
-                        sonar-scanner \
+                        ${scannerHome}/bin/sonar-scanner \
                         -Dsonar.projectKey=data_embedding \
                         -Dsonar.sources=. \
-                        -Dsonar.host.url=http://172.30.100.44:9000 \
-                        -Dsonar.login=${SONAR_AUTH_TOKEN}
+                        -Dsonar.login=${SONAR_AUTH_TOKEN} \
+                        -Dsonar.host.url=http://172.30.100.44:9000
                     """
                 }
             }
