@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKERHUB = credentials('dockerhub_creds')
         SONAR_AUTH_TOKEN = credentials('SonarQube_jenkins')
-        IMAGE_NAME = "hossamtaha9/"
+        IMAGE_NAME = "hossamtaha9/recomind-ai-vector"
         TAG = "latest"
     }
 
