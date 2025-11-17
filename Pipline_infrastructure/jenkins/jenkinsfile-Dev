@@ -104,7 +104,7 @@ pipeline {
         stage('Archive Outputs') {
             when { expression { return !params.MANUAL_PUBLIC_IP } }
             steps {
-                archiveArtifacts artifacts: 'Terraform/Terraform_AIVmServer/outputs/server_ip.txt', fingerprint: true
+                archiveArtifacts artifacts: 'Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt', fingerprint: true
             }
         }
 
@@ -160,7 +160,7 @@ pipeline {
 
         stage('create Ansible inventory file') {
             steps {
-                dir('ansible') {
+                dir('Pipline_infrastructure/ansible') {
                     sh """
                     rm -f ansible_inventory.ini
                     echo "[all]" | tee ansible_inventory.ini
@@ -176,7 +176,7 @@ pipeline {
         stage('run Ansible Playbook') {
 
             steps {
-               dir('ansible') {
+               dir('Pipline_infrastructure/ansible') {
                    sh 'ansible-playbook -i ansible_inventory.ini SetupVmPlaybook.yml'
                 }
             }
@@ -185,7 +185,7 @@ pipeline {
 
         stage('Test connectivity to AI Server') {
             steps {
-                dir('ansible') {
+                dir('Pipline_infrastructure/ansible') {
                     sh '''
                     echo "Testing connectivity to AI Server via Ansible"
                     ansible all -i ansible_inventory.ini -m ping
