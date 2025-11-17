@@ -36,6 +36,7 @@ pipeline {
         stage('SonarQube Scan') {
             steps {
                 withSonarQubeEnv('SonarQube_Server') {
+                    def scannerHome = tool 'SonarQube_Scanner'
                     sh """
                         sonar-scanner \
                         -Dsonar.projectKey=data_embedding \
