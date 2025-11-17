@@ -2,19 +2,32 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB = credentials('Docker')
-        SONAR_AUTH_TOKEN = credentials('SonarQube_jenkins')
+        DOCKERHUB = credentials('Docker')          // credentials من Jenkins (username/password)
+        SONAR_AUTH_TOKEN = credentials('SonarQube_jenkins') // token SonarQube
         IMAGE_NAME = "hossamtaha9/recomind-ai-vector"
         TAG = "latest"
     }
 
     stages {
 
+        stage('Checkout Source Code') {
+            steps {
+                // checkout للكود من repo الرئيسي
+                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-AI.git'
+            }
+        }
+
         stage('OWASP Dependency Check') {
             steps {
-                sh """
-                    dependency-check.sh --project data_embedding --scan . --format XML --out dependency-report
-                """
+                // استخدام Plugin بدلاً من CLI
+                dependencyCheck additionalArguments: '--scan . --format XML --out dependency-report',
+                                odcInstallation: 'Default' // الاسم اللي اخترته في Jenkins
+            }
+        }
+
+        stage('Archive Dependency Report') {
+            steps {
+                archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
             }
         }
 
@@ -26,8 +39,21 @@ pipeline {
                         -Dsonar.projectKey=data_embedding \
                         -Dsonar.sources=. \
                         -Dsonar.host.url=http://172.30.100.44:9000 \
-                        -Dsonar.login=$SONAR_AUTH_TOKEN
+                        -Dsonar.login=${SONAR_AUTH_TOKEN}
                     """
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    timeout(time: 2, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline failed due to Quality Gate: ${qg.status}"
+                        }
+                    }
                 }
             }
         }
@@ -64,7 +90,11 @@ pipeline {
             }
         }
     }
+
+    post {
+        always {
+            // archive أي ملفات أخرى لو تحب
+            echo "Pipeline finished. Reports saved."
+        }
+    }
 }
-
-
-
