@@ -64,7 +64,7 @@ pipeline {
             steps {
                 dir('scr/data_embedding'){
                     
-                sh "docker compose build -t $IMAGE_NAME:$TAG"
+                sh "docker compose build "
                 }
             }
         }
