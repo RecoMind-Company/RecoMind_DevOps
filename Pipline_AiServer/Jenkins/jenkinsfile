@@ -62,9 +62,9 @@ pipeline {
 
         stage("Build Docker Image") {
             steps {
-                dir('scr/data_embedding'){
+                dir('src/data_embedding'){
                     
-                sh "docker compose build . "
+                sh "docker compose build  "
                 }
             }
         }
