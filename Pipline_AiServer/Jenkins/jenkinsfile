@@ -44,6 +44,8 @@ pipeline {
                             ${scannerHome}/bin/sonar-scanner \
                             -Dsonar.projectKey=data_embedding \
                             -Dsonar.sources=.
+                            -Dsonar.host.url=http://172.30.100.44:9000 \
+                            -Dsonar.login=$SONAR_AUTH_TOKEN
                         """
                     }
                 }
