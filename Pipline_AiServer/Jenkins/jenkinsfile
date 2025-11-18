@@ -13,14 +13,13 @@ pipeline {
         stage('Checkout Source Code') {
             steps {
                 // checkout للكود من repo الرئيسي
-                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-AI.git' , credentialsId: 'Github'
+                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-AI.git', credentialsId: 'Github'
             }
         }
 
         stage('OWASP Dependency Check') {
             steps {
-
-                sh'mkdir -p dependency-check-report'
+                sh 'mkdir -p dependency-check-report'
                 // استخدام Plugin بدلاً من CLI
                 dependencyCheck additionalArguments: '--scan . --format XML --out dependency-report',
                                 odcInstallation: 'OWASP-Dependency' // الاسم اللي اخترته في Jenkins
@@ -36,26 +35,27 @@ pipeline {
         stage('SonarQube Scan') {
             steps {
                 script {
-                // استخدام الـ tool داخل script block
+                    // استخدام الـ tool داخل script block
                     def scannerHome = tool 'SonarQube_Scanner'
-                    sh """
-                        ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=data_embedding \
-                        -Dsonar.sources=. \
-                        -Dsonar.login=${SONAR_AUTH_TOKEN} \
-                        -Dsonar.host.url=http://172.30.100.44:9000
-                    """
+                    
+                    // ✅ CRITICAL FIX: استخدام withSonarQubeEnv wrapper
+                    withSonarQubeEnv('SonarQube_Server') {
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=data_embedding \
+                            -Dsonar.sources=.
+                        """
+                    }
                 }
             }
         }
 
         stage('Quality Gate') {
             steps {
-                
-                timeout(time: 2, unit: 'MINUTES') {
+                timeout(time: 5, unit: 'MINUTES') {
+                    // ✅ الآن هيشتغل صح لأن الـ scan كان جوا withSonarQubeEnv
                     waitForQualityGate abortPipeline: true
                 }
-                
             }
         }
 
@@ -94,8 +94,13 @@ pipeline {
 
     post {
         always {
-            // archive أي ملفات أخرى لو تحب
             echo "Pipeline finished. Reports saved."
+        }
+        success {
+            echo "✅ Pipeline completed successfully!"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check the logs."
         }
     }
 }
