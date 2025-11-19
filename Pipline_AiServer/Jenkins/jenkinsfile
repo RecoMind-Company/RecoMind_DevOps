@@ -13,7 +13,7 @@ pipeline {
         stage('Checkout Source Code') {
             steps {
                 // checkout للكود من repo الرئيسي
-                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-AI.git', credentialsId: 'Github'
+                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-AI.git', credentialsId: 'Git_hub'
             }
         }
 
