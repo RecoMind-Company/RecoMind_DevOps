@@ -43,7 +43,7 @@ pipeline {
                                 ${scannerHome}/bin/sonar-scanner \
                                 -Dsonar.projectKey=recomind-company-Ai \
                                 -Dsonar.organization=recomind-company \
-                                -url=https://sonarcloud.io \
+                                -Dsonar.host.url=https://sonarcloud.io \
                                 -Dsonar.sources=. \
                                 -Dsonar.login=$TOKEN
                             """
