@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB = credentials('Docker')          // credentials من Jenkins (username/password)
+        DOCKERHUB = credentials('Docker_Hub_Hossam')          // credentials من Jenkins (username/password)
         SONAR_AUTH_TOKEN = credentials('SonarQube_jenkins') // token SonarQube
         IMAGE_NAME = "hossamtaha9/recomind-ai-vector"
         TAG = "latest"
