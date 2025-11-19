@@ -38,7 +38,7 @@ pipeline {
                     def scannerHome = tool 'SonarQube_Scanner'
                     
                     withSonarQubeEnv('SonarQube_Server') {
-                        withCredentials([string(credentialsId: 'SonarCloud', variable: 'TOKEN')]) {
+                        withCredentials([string(credentialsId: 'sonarCloud', variable: 'TOKEN')]) {
                             sh """
                                 ${scannerHome}/bin/sonar-scanner \
                                 -Dsonar.projectKey=recomind-company \
