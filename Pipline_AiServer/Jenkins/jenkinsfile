@@ -38,10 +38,12 @@ pipeline {
                     def scannerHome = tool 'SonarQube_Scanner'
                     
                     withSonarQubeEnv('SonarQube_Server') {
-                        withCredentials([string(credentialsId: 'SonarQube_jenkins', variable: 'TOKEN')]) {
+                        withCredentials([string(credentialsId: 'SonarCloud', variable: 'TOKEN')]) {
                             sh """
                                 ${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=data_embedding \
+                                -Dsonar.projectKey=recomind-company \
+                                -sonar.organization=RecoMind Company \
+                                -url=https://sonarcloud.io \
                                 -Dsonar.sources=. \
                                 -Dsonar.login=$TOKEN
                             """
