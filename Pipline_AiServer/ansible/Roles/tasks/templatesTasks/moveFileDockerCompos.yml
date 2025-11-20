@@ -4,7 +4,7 @@
 
 - name: move docker-compose.yml on remote server
   copy:
-    src:  Pipline_AiServer/ansible/Roles/files/docker-compose.yml
+    src:   docker-compose.yml
     dest: /home/AI_Server/recomind-app-ai/docker-compose.yml
     owner: AI_Server
     group: AI_Server
