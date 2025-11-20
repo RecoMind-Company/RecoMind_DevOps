@@ -37,6 +37,15 @@ pipeline{
         }
 
 
+        stages('Move docker-compose file') {
+            steps {
+                sh '''
+                cp Pipline_data_embedding-cd/src/data_embedding/docker-compose.yml Pipline_AiServer/ansible/Roles/files
+                '''
+            }
+        }
+
+
 
 
         stage('Add Ip or Domain to Ansible Defaults') {
