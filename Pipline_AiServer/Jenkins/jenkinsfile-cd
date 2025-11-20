@@ -37,13 +37,24 @@ pipeline{
         }
 
 
-        stage('Move docker-compose file') {
+        stage('Prepare Ansible Files') {
             steps {
                 sh '''
-                    cp src/data_embedding/* Pipline_AiServer/ansible/Roles/files
+                    echo "=== Creating Ansible files directory ==="
+                    mkdir -p Pipline_AiServer/ansible/Roles/files/
+                    
+                    echo "=== Copying docker-compose.yml from src/data_embedding/ ==="
+                    cp src/data_embedding/docker-compose.yml \
+                    Pipline_AiServer/ansible/Roles/files/docker-compose.yml
+                    
+                    echo "=== Verification ==="
+                    ls -la Pipline_AiServer/ansible/Roles/files/
+                    echo "\n=== File content preview ==="
+                    head -20 Pipline_AiServer/ansible/Roles/files/docker-compose.yml
                 '''
             }
         }
+    
 
 
 
