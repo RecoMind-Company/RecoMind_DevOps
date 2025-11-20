@@ -29,7 +29,7 @@ pipeline{
         stage('Get Artifacts docker-compose from CI Pipeline') {
             steps {
                 copyArtifacts(
-                    projectName: 'Pipline_data_embedding-cd',
+                    projectName: 'Pipline_data_embedding-ci',
                     fingerprintArtifacts: true,
                     selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
                 )
