@@ -6,7 +6,6 @@
   copy:
     src:  Pipline_AiServer/ansible/Roles/files/docker-compose.yml
     dest: /home/AI_Server/recomind-app-ai/docker-compose.yml
-    remote_src: yes
     owner: AI_Server
     group: AI_Server
     mode: '0644'
