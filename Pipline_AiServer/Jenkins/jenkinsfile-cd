@@ -42,14 +42,18 @@ pipeline{
                 withCredentials([
                     sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
                 ]) {
+                    script{
+                        env.publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt').trim()
+                        env.server_name = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/servername.txt').trim()
 
-                    env.publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt').trim()
-                    env.server_name = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/servername.txt').trim()
+                        sh '''
+                        echo "Testing SSH connection to ${ipToUse}"
+                        ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "echo Connected successfully"
+                        '''
 
-                    sh '''
-                    echo "Testing SSH connection to ${ipToUse}"
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "echo Connected successfully"
-                    '''
+                    }
+
+                    
                 }
             }
 
