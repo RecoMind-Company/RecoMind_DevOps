@@ -4,5 +4,5 @@
 - name: move docker compose file
   file:
     src: src/data_embedding/docker-compose.yml
-    dest: /etc/nginx/sites-available/{{ app_container_name }}
+    dest: /home/AI_Server
   become: yes
