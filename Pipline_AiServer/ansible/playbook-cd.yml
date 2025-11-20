@@ -1,0 +1,5 @@
+- name: Deploy application on Vm_Ai
+  hosts: all
+  become: yes
+  roles:
+    - Roles
