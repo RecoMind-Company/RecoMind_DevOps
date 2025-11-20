@@ -88,34 +88,55 @@ pipeline {
             }
         }
 
-        stage('Get Public IP') {
+        stage('Get Public IP and Server username') {
             when { expression { return !params.MANUAL_PUBLIC_IP } }
             steps {
                 dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
                     script {
                         env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
                         echo "Public IP is: ${env.PUBLIC_IP}"
+                        env.SERVER_NAME = sh(script: "terraform output -raw server_name", returnStdout: true).trim()
+                        echo "Server Name is: ${env.SERVER_NAME}"
+
                         writeFile file: 'outputs/server_ip.txt', text: env.PUBLIC_IP
+                        writeFile file: 'outputs/server_Name.txt', text: env.SERVER_NAME
                     }
                 }
             }
         }
 
-        stage('Archive Outputs') {
-            when { expression { return !params.MANUAL_PUBLIC_IP } }
-            steps {
-                archiveArtifacts artifacts: 'Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt', fingerprint: true
-            }
-        }
+        // stage('Archive Outputs') {
+        //     when { expression { return !params.MANUAL_PUBLIC_IP } }
+        //     steps {
+        //         archiveArtifacts artifacts: 'Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt', fingerprint: true
+        //     }
+        // }
 
         stage('Detect IP & Save Global') {
             steps {
+                dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer'){
+                    script {
+                        env.ipToUse = env.PUBLIC_IP ?: sh(script: "cat outputs/server_ip.txt", returnStdout: true).trim()
+                        if (!env.ipToUse) {
+                            error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
+                        }
+                        echo "✅ Using IP: ${env.ipToUse}"
+                    }
+
+                }
+
+                
+            }
+        }
+
+        stage('Detect Server Name & Save Global ') {
+            steps {
                 script {
-                    env.ipToUse = env.PUBLIC_IP ?: params.MANUAL_PUBLIC_IP
-                    if (!env.ipToUse) {
+                    env.server_Name = env.PUBLIC_IP ?: sh(script: "cat Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_Name.txt", returnStdout: true).trim()
+                    if (!env.server_Name) {
                         error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
                     }
-                    echo "✅ Using IP: ${env.ipToUse}"
+                    echo "✅ Using IP: ${env.server_Name}"
                 }
             }
         }
@@ -152,7 +173,7 @@ pipeline {
                 ]) {
                     sh '''
                     echo "Testing SSH connection to ${ipToUse}"
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" AI_Server@${ipToUse} "echo Connected successfully"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${env.SERVER_NAME}@${ipToUse} "echo Connected successfully"
                     '''
                 }
             }
@@ -164,7 +185,7 @@ pipeline {
                     sh """
                     rm -f ansible_inventory.ini
                     echo "[all]" | tee ansible_inventory.ini
-                    echo "server ansible_host=${ipToUse} ansible_user=AI_Server ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/id_rsa" | tee -a ansible_inventory.ini
+                    echo "server ansible_host=${ipToUse} ansible_user=${env.SERVER_NAME} ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/id_rsa" | tee -a ansible_inventory.ini
                     cat ansible_inventory.ini
                     """
                 }
@@ -194,6 +215,11 @@ pipeline {
                 
             }
         }
+
+        
+    
+
+
 
     }
 }
