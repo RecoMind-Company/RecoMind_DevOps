@@ -17,6 +17,14 @@ pipeline {
             }
         }
 
+        stage('Archive Outputs') {
+            steps {
+                archiveArtifacts artifacts: 'src/data_embedding/docker-compose.yml', fingerprint: true
+            }
+        }
+
+
+
         
 
         stage('OWASP Dependency Check') {
@@ -95,11 +103,16 @@ pipeline {
             }
         }
 
-        // stage('Trigger CD Pipeline') {
-        //     steps {
-        //         build job: "CD_Job_Name", wait: false
-        //     }
-        // }
+        
+
+
+        
+
+        stage('Trigger CD Pipeline') {
+            steps {
+                build job: "Pipline_data_embedding_cd", wait: false
+            }
+        }
     }
 
     post {
