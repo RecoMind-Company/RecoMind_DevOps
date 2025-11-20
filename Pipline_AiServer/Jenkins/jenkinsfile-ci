@@ -110,7 +110,7 @@ pipeline {
 
         stage('Trigger CD Pipeline') {
             steps {
-                build job: "Pipline_data_embedding_cd", wait: false
+                build job: "Pipline_data_embedding-cd", wait: false
             }
         }
     }
