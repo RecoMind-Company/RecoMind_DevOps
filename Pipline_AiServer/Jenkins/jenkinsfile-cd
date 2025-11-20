@@ -40,9 +40,7 @@ pipeline{
         stage('Prepare Ansible Files') {
             steps {
                 sh '''
-                    echo "=== Creating Ansible files directory ==="
-                    mkdir -p Pipline_AiServer/ansible/Roles/files/ || true
-                    
+
                     echo "=== Copying docker-compose.yml from src/data_embedding/ ==="
                     cp src/data_embedding/docker-compose.yml \
                     Pipline_AiServer/ansible/Roles/files/docker-compose.yml
