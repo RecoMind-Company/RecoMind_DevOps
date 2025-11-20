@@ -15,14 +15,7 @@ pipeline{
     stages {
 
 
-        stage('Checkout Source Code') {
-            steps {
-                // checkout للكود من repo الرئيسي
-                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-AI.git', credentialsId: 'Git_hub'
-            }
-        }
-
-
+        
         stage('Get Artifacts from Pipeline Infrastructure') {
             steps {
                 copyArtifacts(
