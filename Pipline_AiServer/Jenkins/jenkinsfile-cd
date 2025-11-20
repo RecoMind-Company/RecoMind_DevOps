@@ -26,6 +26,19 @@ pipeline{
             }
         }
 
+        stage('Get Artifacts docker-compose from CI Pipeline') {
+            steps {
+                copyArtifacts(
+                    projectName: 'Pipline_data_embedding-cd',
+                    fingerprintArtifacts: true,
+                    selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
+                )
+            }
+        }
+
+
+
+
         stage('Add Ip or Domain to Ansible Defaults') {
             steps {
                 script {
@@ -38,7 +51,6 @@ pipeline{
             }
         }
 
-        
 
 
         stage('connect to Ai Server ') {
