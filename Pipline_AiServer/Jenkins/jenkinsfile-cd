@@ -8,6 +8,8 @@ pipeline{
 
     }
 
+    
+
     stages {
         stage('Get Artifacts from Pipeline Infrastructure') {
             steps {
