@@ -11,9 +11,9 @@ pipeline{
         stage('Get Artifacts from Pipeline Anfrastructure') {
             steps {
                 copyArtifacts(
-                    projectName: 'Pipline_infrastructure',    
-                    selector: lastSuccessful(),
-                    filter: 'outputs/*'
+                    projectName: 'Pipeline_Infrastructure',
+                    fingerprintArtifacts: true,
+                    selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
                 )
             }
         }
