@@ -138,21 +138,37 @@ pipeline{
             }
         }
 
-        // stage('stop Docker Container on AI Server') {
-        //     steps {
-        //         withCredentials([
-        //             sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
-        //         ]) {
-        //             sh '''
-        //             echo "Running Docker Container on AI Server"
-        //             ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
-        //                 docker stop ai_vector_container || true &&
-        //                 docker rm ai_vector_container || true &&
-        //             "
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('stop Docker Container on AI Server') {
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+                ]) {
+                    sh '''
+                    echo "Running Docker Container on AI Server"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
+                        docker compose -f docker-compose.yml down || true &&
+                        
+                    "
+                    '''
+                }
+            }
+        }
+
+
+        stage('start Docker Container on AI Server') {
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+                ]) {
+                    sh '''
+                    echo "Running Docker Container on AI Server"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
+                        docker compose -f docker-compose.yml up -d
+                    "
+                    '''
+                }   
+            }
+        }
 
 
     }
