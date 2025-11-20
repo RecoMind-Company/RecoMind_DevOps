@@ -36,38 +36,61 @@ pipeline{
             }
         }
 
-        stage('Deploy Docker Compose') {
+        stage('connect to Ai Server ') {
+            
             steps {
                 withCredentials([
                     sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
+                ]) {
+
+                    env.publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt').trim()
+                    env.server_name = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/servername.txt').trim()
+
+                    sh '''
+                    echo "Testing SSH connection to ${ipToUse}"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "echo Connected successfully"
+                    '''
+                }
+            }
+
+            
+        }
+
+        stage('pull Docker Image on AI Server') {
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
                     usernamePassword(credentialsId: 'Docker_Hub_Hossam', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')
                 ]) {
-                    script {
-                        def publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt').trim()
-                        def server_name = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/servername.txt').trim()
+                    sh '''
 
-                        def composeDir = "/home/ubuntu/recomind-app" 
-
-                        
-
-                        sh """
-                            ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} \\
-                            "echo Connected successfully &&
-                            docker login -u $DOCKERHUB_USR -p $DOCKERHUB_PSW &&
-                            cd $composeDir &&
-                            docker-compose pull &&
-                            docker-compose down &&
-                            docker-compose up -d"
-                        """
-                    }
+                    echo "Pulling Docker Image on AI Server"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
+                        docker login -u $DOCKERHUB_USR -p $DOCKERHUB_PSW &&
+                        docker pull ${IMAGE_NAME}:${TAG} &&
+                    '''
                 }
             }
         }
 
+        // stage('stop Docker Container on AI Server') {
+        //     steps {
+        //         withCredentials([
+        //             sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+        //         ]) {
+        //             sh '''
+        //             echo "Running Docker Container on AI Server"
+        //             ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
+        //                 docker stop ai_vector_container || true &&
+        //                 docker rm ai_vector_container || true &&
+        //             "
+        //             '''
+        //         }
+        //     }
+        // }
 
-        
-        
 
-    }  
+    }
 
-}
+}  
+
