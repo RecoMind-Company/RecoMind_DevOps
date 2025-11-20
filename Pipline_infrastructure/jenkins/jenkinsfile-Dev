@@ -99,7 +99,7 @@ pipeline {
                         echo "Public IP is: ${env.PUBLIC_IP}"
                         env.SERVER_NAME = sh(script: "terraform output -raw vm_admin_username", returnStdout: true).trim()
                         echo "Server Name is: ${env.SERVER_NAME}"
-                        createDir 'outputs'
+                        sh 'mkdir -p outputs'
                         writeFile file: 'outputs/server_ip.txt', text: env.PUBLIC_IP
                         writeFile file: 'outputs/server_Name.txt', text: env.SERVER_NAME
                     }
