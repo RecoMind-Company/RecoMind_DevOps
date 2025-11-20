@@ -59,7 +59,7 @@ pipeline{
         stage('pull Docker Image on AI Server') {
             steps {
                 withCredentials([
-                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
                     usernamePassword(credentialsId: 'Docker_Hub_Hossam', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')
                 ]) {
                     sh '''
