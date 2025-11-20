@@ -134,7 +134,7 @@ pipeline {
         stage('Detect Server Name & Save Global ') {
             steps {
                 script {
-                    env.server_Name = env.PUBLIC_IP ?: sh(script: "cat Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_Name.txt", returnStdout: true).trim()
+                    env.server_Name = sh(script: "cat Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_Name.txt", returnStdout: true).trim()
                     if (!env.server_Name) {
                         error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
                     }
