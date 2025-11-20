@@ -37,31 +37,31 @@ pipeline{
         }
 
         stage('Deploy Docker Compose') {
-    steps {
-        withCredentials([
-            sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
-            usernamePassword(credentialsId: 'DOCKER_HUB_HOSSAM', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')
-        ]) {
-            script {
-                def publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt').trim()
-                def server_name = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/servername.txt').trim()
-                def composeDir = "/home/ubuntu/recomind-app" // مكان docker-compose.yml على السيرفر
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
+                    usernamePassword(credentialsId: 'DOCKER_HUB_HOSSAM', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')
+                ]) {
+                    script {
+                        def publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt').trim()
+                        def server_name = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/servername.txt').trim()
+                        def composeDir = "/home/ubuntu/recomind-app" // مكان docker-compose.yml على السيرفر
 
-                echo "Connecting to ${server_name}@${publicIp} and deploying Docker Compose"
+                        echo "Connecting to ${server_name}@${publicIp} and deploying Docker Compose"
 
-                sh """
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} \\
-                    "echo Connected successfully &&
-                    docker login -u $DOCKERHUB_USR -p $DOCKERHUB_PSW &&
-                    cd $composeDir &&
-                    docker-compose pull &&
-                    docker-compose down &&
-                    docker-compose up -d"
-                """
+                        sh """
+                            ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} \\
+                            "echo Connected successfully &&
+                            docker login -u $DOCKERHUB_USR -p $DOCKERHUB_PSW &&
+                            cd $composeDir &&
+                            docker-compose pull &&
+                            docker-compose down &&
+                            docker-compose up -d"
+                        """
+                    }
+                }
             }
         }
-    }
-}
 
 
         
