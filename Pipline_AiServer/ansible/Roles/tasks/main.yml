@@ -2,9 +2,9 @@
 # tasks file for Roles
 
 
-# install Docker 
-- name: Install Docker on VM
-  import_tasks: templatesTasks/Docker.yml
+# # install Docker 
+# - name: Install Docker on VM
+#   import_tasks: templatesTasks/Docker.yml
 
 # setup nginx
 - name: Setup Nginx on VM
