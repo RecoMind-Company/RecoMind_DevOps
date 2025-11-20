@@ -40,7 +40,7 @@ pipeline{
         stage('Move docker-compose file') {
             steps {
                 sh '''
-                    cp Pipline_data_embedding-cd/src/data_embedding/docker-compose.yml Pipline_AiServer/ansible/Roles/files
+                    cp src/data_embedding/* Pipline_AiServer/ansible/Roles/files
                 '''
             }
         }
