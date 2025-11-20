@@ -8,10 +8,10 @@ pipeline{
     }
 
     stages {
-        stage('Get Artifacts from Pipeline Anfrastructure') {
+        stage('Get Artifacts from Pipeline Infrastructure') {
             steps {
                 copyArtifacts(
-                    projectName: 'Pipeline_Infrastructure',
+                    projectName: 'Pipline_Infrastructure',
                     fingerprintArtifacts: true,
                     selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
                 )
