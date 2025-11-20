@@ -1,0 +1,26 @@
+pipeline{
+    agent any
+
+    environment {
+        DOCKERHUB = credentials('Docker_Hub_Hossam')          // credentials من Jenkins (username/password)
+        IMAGE_NAME = "hossamtaha9/recomind-ai-vector"
+        TAG = "latest"
+    }
+
+    stages {
+        stage('Get Artifacts from Pipeline Anfrastructure') {
+            steps {
+                copyArtifacts(
+                    projectName: 'Pipline_infrastructure',    
+                    selector: lastSuccessful(),
+                    filter: 'outputs/*'
+                )
+            }
+        }
+
+        
+
+
+    }  
+
+}

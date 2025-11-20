@@ -107,12 +107,12 @@ pipeline {
             }
         }
 
-        // stage('Archive Outputs') {
-        //     when { expression { return !params.MANUAL_PUBLIC_IP } }
-        //     steps {
-        //         archiveArtifacts artifacts: 'Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt', fingerprint: true
-        //     }
-        // }
+        stage('Archive Outputs') {
+            when { expression { return !params.MANUAL_PUBLIC_IP } }
+            steps {
+                archiveArtifacts artifacts: 'Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/*', fingerprint: true
+            }
+        }
 
         stage('Detect IP & Save Global') {
             steps {
@@ -217,11 +217,5 @@ pipeline {
                 
             }
         }
-
-        
-    
-
-
-
     }
 }
