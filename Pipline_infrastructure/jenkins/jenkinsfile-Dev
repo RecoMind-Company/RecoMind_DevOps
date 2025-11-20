@@ -2,11 +2,12 @@ pipeline {
     agent any
 
     parameters {
-        string(
-            name: 'MANUAL_PUBLIC_IP',
-            defaultValue: '',
-            description: 'Provide IP to run Ansible manually and skip Terraform'
+        booleanParam(
+            name: 'SKIP_TERRAFORM', 
+            defaultValue: false, 
+            description: 'Provide IP to run Ansible only'
         )
+
         booleanParam(
             name: 'SKIP_ANSIBLE', 
             defaultValue: false, 
@@ -30,7 +31,7 @@ pipeline {
     stages {
 
         stage('Terraform Init') {
-            when { expression { return !params.MANUAL_PUBLIC_IP } }
+            when { expression { return !params.SKIP_TERRAFORM } }
             steps {
                 dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
                     sh 'rm -rf .terraform .terraform.lock.hcl'
@@ -40,7 +41,7 @@ pipeline {
         }
 
         stage('Terraform Validate') {
-            when { expression { return !params.MANUAL_PUBLIC_IP } }
+            when { expression { return !params.SKIP_TERRAFORM } }
             steps {
                 dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
                     sh 'terraform validate'
@@ -49,7 +50,7 @@ pipeline {
         }
 
         stage('ssh-keyscan') {
-            when { expression { return !params.MANUAL_PUBLIC_IP } }
+            when { expression { return !params.SKIP_TERRAFORM } }
             steps {
                 dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
                     withCredentials([
@@ -71,7 +72,7 @@ pipeline {
         }
 
         stage('Terraform Plan') {
-            when { expression { return !params.MANUAL_PUBLIC_IP } }
+            when { expression { return !params.SKIP_TERRAFORM } }
             steps {
                 dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
                     sh 'terraform plan -out=tfplan'
@@ -80,7 +81,7 @@ pipeline {
         }
 
         stage('Terraform Apply') {
-            when { expression { return !params.MANUAL_PUBLIC_IP } }
+            when { expression { return !params.SKIP_TERRAFORM } }
             steps {
                 dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
                     sh 'terraform apply -auto-approve tfplan'
@@ -89,7 +90,7 @@ pipeline {
         }
 
         stage('Get Public IP and Server username') {
-            when { expression { return !params.MANUAL_PUBLIC_IP } }
+            when { expression { return !params.SKIP_TERRAFORM } }
             steps {
                 dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
                     script {
