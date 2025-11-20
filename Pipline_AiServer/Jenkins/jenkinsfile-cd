@@ -25,7 +25,10 @@ pipeline{
             steps {
                 script {
                     def publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_ip.txt').trim()
-                    sh 'sed -i "s/^server_domain_or_IP:.*$/server_domain_or_IP: \'$publicIp\'/" Pipline_AiServer/ansible/Roles/defaults/main.yml'
+                    sh """
+                    sed -i "s/^server_domain_or_IP:.*/server_domain_or_IP: '${publicIp}'/" Pipline_AiServer/ansible/Roles/defaults/main.yml
+                    """
+
                 }
             }
         }
