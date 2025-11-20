@@ -1,8 +1,10 @@
 ---
 
 
-- name: move docker compose file
-  file:
-    src: src/data_embedding/docker-compose.yml
-    dest: /home/AI_Server
-  become: yes
+- name: copy docker-compose.yml to target
+  copy:
+    src: /home/AI_Server/docker-compose.yml
+    dest: /home/AI_Server/recomind-app/docker-compose.yml
+    owner: AI_Server
+    group: AI_Server
+    mode: '0644'
