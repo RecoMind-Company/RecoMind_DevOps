@@ -4,7 +4,7 @@
 
 - name: move docker-compose.yml on remote server
   copy:
-    src: src/data_embedding/docker-compose.yml
+    src:  src/data_embedding/docker-compose.yml
     dest: /home/AI_Server/recomind-app-ai/docker-compose.yml
     remote_src: yes
     owner: AI_Server
