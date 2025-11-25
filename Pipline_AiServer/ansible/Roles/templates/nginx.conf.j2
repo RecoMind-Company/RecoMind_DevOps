@@ -1,20 +1,42 @@
+
 server {
     listen 80;
-    server_name {{ server_domain_or_IP }};
+    server_name 158.158.99.245;
 
-    # لو عندك ملفات ثابتة (اختياري)
-    location /static/ {
-        root /var/www/{{ app_container_name }};
+    # Static files for Reporting System
+    location /reporting/static/ {
+        root /var/www/{{ reporting_container_name }};
     }
 
-    # تحويل الطلبات إلى التطبيق داخل الـ container
-    location / {
-        proxy_pass http://127.0.0.1:{{ app_port }};
+    # Reporting System API
+    location /reporting/ {
+        proxy_pass http://127.0.0.1:{{ reporting_port }}/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection keep-alive;
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
     }
+
+    # Data Embedding Static files
+    location /embedding/static/ {
+        root /var/www/{{ embedding_container_name }};
+    }
+
+    # Data Embedding API
+    location /embedding/ {
+        proxy_pass http://127.0.0.1:{{ embedding_port }}/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection keep-alive;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Redirect root
+    location / {
+        return 301 /reporting/;
+    }
 }
+
 

@@ -1,9 +1,12 @@
 ---
 # defaults file for Roles
 
-app_port: 8000
+embedding_port: 8000
+reporting_port: 8001
 
-app_container_name: recomind-ingestion-api
+
+reporting_container_name: recomind-ingestion-api
+embedding_container_name: recomind-ingestion-api
 
 
 server_domain_or_IP: your_domain_or_ip_here
