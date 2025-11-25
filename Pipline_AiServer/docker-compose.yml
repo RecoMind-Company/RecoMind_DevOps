@@ -8,9 +8,12 @@ services:
     ports:
       - "6379:6379"
 
+    volumes:
+      - redis_data:/data
+
   # Service 2: The FastAPI API
-  api:
-    image: hossamtaha9/recomind-ai-vector:latest
+  data_embedding_api:
+    image: hossamtaha9/recomind-ai-vector-data_embedding:latest
     container_name: recomind-ingestion-api
     env_file:
       - .env  # Load all secrets from .env file
@@ -18,15 +21,12 @@ services:
       - "8000:8000"
     depends_on:
       - redis
-    # --- [MODIFICATION] ---
-    # We removed 'network_mode: "host"'
-    # Add a public DNS to fix internet resolution issues
     dns:
       - 8.8.8.8
     # --- [MODIFICATION END] ---
 
   # Service 3: The Celery Worker
-  worker:
+  data_impedding_worker:
     image: hossamtaha9/recomind-ai-vector:latest
     container_name: recomind-ingestion-worker
     command: celery -A celery_worker.celery_app worker --loglevel=info -P gevent
@@ -34,9 +34,40 @@ services:
       - .env  # The worker also needs all the secrets
     depends_on:
       - redis
-    # --- [MODIFICATION] ---
-    # We removed 'network_mode: "host"'
-    # The worker also needs the public DNS to access the internet
     dns:
       - 8.8.8.8
     # --- [MODIFICATION END] ---
+
+  # Service 4: Reporting System
+  reporting_system_api:
+    image: hossamtaha9/recomind-ai-reporting_system:latest
+    container_name: recomind-reporting-system
+    env_file:
+      - .env  # Load all secrets from .env file
+    ports:
+      - "8001:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENROUTER_API_KEY}
+      - OPENAI_API_BASE=${BASE_URL}
+      - OPENAI_MODEL_NAME=${crewai_LLM_MODEL} 
+    depends_on:
+      - redis
+    dns:
+      - 8.8.8.8
+
+
+  # worker service for reporting system
+  reporting_system_worker:
+    image: hossamtaha9/recomind-ai-reporting_system:latest
+    container_name: recomind-reporting-system-worker
+    command: celery -A reporting_celery_worker.celery_app worker --loglevel=info -P gevent
+    env_file:
+      - .env  # The worker also needs all the secrets
+    depends_on:
+      - redis
+      - reporting_system_api
+
+volumes:
+  redis_data:
+    
+  
