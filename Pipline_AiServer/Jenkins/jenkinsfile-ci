@@ -84,7 +84,7 @@ pipeline {
 
                 stage('Build reporting_system Image') {
                     steps {
-                        dir('src/other_service') {
+                        dir('src/reporting_system') {
                             sh "docker build -t ${IMAGE_NAME}-reporting_system:${TAG} ."
                         }
                     }
