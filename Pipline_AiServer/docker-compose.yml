@@ -27,6 +27,7 @@ services:
 
   # Service 3: The Celery Worker
   worker:
+    image: hossamtaha9/recomind-ai-vector:latest
     container_name: recomind-ingestion-worker
     command: celery -A celery_worker.celery_app worker --loglevel=info -P gevent
     env_file:
