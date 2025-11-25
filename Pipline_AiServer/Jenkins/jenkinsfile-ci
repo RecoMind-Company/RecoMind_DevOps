@@ -73,10 +73,21 @@ pipeline {
         // }
 
         stage("Build Docker Image") {
-            steps {
-                dir('src/data_embedding'){
-                    
-                sh "docker compose build  "
+            parallel {
+                stage('Build data_embedding Image') {
+                    steps {
+                        dir('src/data_embedding') {
+                            sh "docker build -t ${IMAGE_NAME}-data_embedding:${TAG} ."
+                        }
+                    }
+                }
+
+                stage('Build reporting_system Image') {
+                    steps {
+                        dir('src/other_service') {
+                            sh "docker build -t ${IMAGE_NAME}-reporting_system:${TAG} ."
+                        }
+                    }
                 }
             }
         }
@@ -98,8 +109,18 @@ pipeline {
         }
 
         stage('Push Image') {
-            steps {
-                sh "docker push $IMAGE_NAME:$TAG"
+            parallel{
+                stage('Push data_embedding Image') {
+                    steps {
+                        sh "docker push ${IMAGE_NAME}-data_embedding:$TAG"
+                    }
+                }
+
+                stage('Push reporting_system Image') {
+                    steps {
+                        sh "docker push ${IMAGE_NAME}-reporting_system:$TAG"
+                    }
+                }
             }
         }
 
@@ -110,7 +131,7 @@ pipeline {
 
         stage('Trigger CD Pipeline') {
             steps {
-                build job: "Pipline_data_embedding-cd", wait: false
+                build job: "Pipline-Ai-cd", wait: false
             }
         }
     }
