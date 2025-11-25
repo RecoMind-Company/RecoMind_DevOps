@@ -27,7 +27,7 @@ services:
 
   # Service 3: The Celery Worker
   data_impedding_worker:
-    image: hossamtaha9/recomind-ai-vector:latest
+    image: hossamtaha9/recomind-ai-vector-data_embedding:latest
     container_name: recomind-ingestion-worker
     command: celery -A celery_worker.celery_app worker --loglevel=info -P gevent
     env_file:
@@ -40,7 +40,7 @@ services:
 
   # Service 4: Reporting System
   reporting_system_api:
-    image: hossamtaha9/recomind-ai-reporting_system:latest
+    image: hossamtaha9/recomind-ai-vector-reporting_system:latest
     container_name: recomind-reporting-system
     env_file:
       - .env  # Load all secrets from .env file
@@ -58,7 +58,7 @@ services:
 
   # worker service for reporting system
   reporting_system_worker:
-    image: hossamtaha9/recomind-ai-reporting_system:latest
+    image: hossamtaha9/recomind-ai-vector-reporting_system:latest
     container_name: recomind-reporting-system-worker
     command: celery -A reporting_celery_worker.celery_app worker --loglevel=info -P gevent
     env_file:
