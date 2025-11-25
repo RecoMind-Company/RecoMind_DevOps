@@ -142,7 +142,7 @@ pipeline{
                     sh '''
                     echo "Running Docker Container on AI Server"
                     ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
-                        docker compose -f recomind-app-ai/docker-compose.yml down || true 
+                        docker compose -f docker-compose.yml down || true 
                     "
                     '''
                 }
@@ -158,7 +158,7 @@ pipeline{
                     sh '''
                     echo "Running Docker Container on AI Server"
                     ssh -T -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
-                        docker compose -f recomind-app-ai/docker-compose.yml up -d
+                        docker compose -f docker-compose.yml up -d
                     "
                     '''
                 }   
