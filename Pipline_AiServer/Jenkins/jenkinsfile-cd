@@ -41,7 +41,7 @@ pipeline{
                     mkdir -p Pipline_AiServer/ansible/Roles/files/
 
                     echo "=== Copying docker-compose.yml from src/data_embedding/ ==="
-                    cp src/data_embedding/docker-compose.yml \
+                    cp Pipline_AiServer/docker-compose.yml \
                     Pipline_AiServer/ansible/Roles/files/docker-compose.yml
                     
                     echo "=== Verification ==="
