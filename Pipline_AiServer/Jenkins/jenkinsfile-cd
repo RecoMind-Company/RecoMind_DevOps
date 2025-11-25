@@ -142,7 +142,7 @@ pipeline{
                     sh '''
                     echo "Running Docker Container on AI Server"
                     ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
-                        docker compose -f docker-compose.yml down || true 
+                        docker compose -f docker-compose.yml down --volumes --remove-orphans || true 
                     "
                     '''
                 }
