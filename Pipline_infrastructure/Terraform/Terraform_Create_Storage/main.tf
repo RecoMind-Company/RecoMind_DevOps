@@ -20,14 +20,15 @@ provider "azurerm" {
 
 
 # Resource Group
-data "azurerm_resource_group" "rg" {
-  name     = "DevOpsRG"     
+resource "azurerm_resource_group" "rg" {
+  name     = var.gr_name
+  location = var.location
   }
 
 resource "azurerm_storage_account" "storage" {
-  name                     = "devopsstorage008"
-  resource_group_name      = data.azurerm_resource_group.rg.name
-  location                 = data.azurerm_resource_group.rg.location
+  name                     = "devopsstorage0089"
+  resource_group_name      = azurerm_resource_group.rg.name
+  location                 = azurerm_resource_group.rg.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
@@ -35,8 +36,8 @@ resource "azurerm_storage_account" "storage" {
 }
 
 resource "azurerm_storage_container" "container" {
-  name                  = "devopsstoragecontainer00"
-  storage_account_name  = azurerm_storage_account.storage.name
+  name                  = "devopsstoragecontainer009"
+  storage_account_name  =  azurerm_storage_account.storage.name
   container_access_type = "private"
   
 }
