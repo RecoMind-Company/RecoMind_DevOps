@@ -4,11 +4,11 @@ server {
 
     location /embedding/static/ {
         root /var/www/{{ embedding_container_name }};
-        try_files $uri $uri/ =404;
+        
     }
 
     location /embedding/ {
-        proxy_pass http://127.0.0.1:{{ embedding_port }};
+        proxy_pass http://127.0.0.1:{{ embedding_port }}/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "keep-alive";
