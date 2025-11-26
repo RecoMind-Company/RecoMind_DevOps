@@ -15,7 +15,7 @@
 - name: Enable Nginx site
   file:
     src: /etc/nginx/sites-available/recomind-ai-server
-    dest: /etc/nginx/sites-enabled/recomind-ai-server
+    dest: /etc/nginx/sites-enabled/
     state: link
   become: yes
 
