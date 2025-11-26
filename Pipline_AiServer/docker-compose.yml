@@ -46,10 +46,10 @@ services:
       - .env  # Load all secrets from .env file
     ports:
       - "8001:8000"
-    # environment:
-    #   - OPENAI_API_KEY=${OPENROUTER_API_KEY}
-    #   - OPENAI_API_BASE=${BASE_URL}
-    #   - OPENAI_MODEL_NAME=${crewai_LLM_MODEL} 
+    environment:
+      - OPENAI_API_KEY=${OPENROUTER_API_KEY}
+      - OPENAI_API_BASE=${BASE_URL}
+      - OPENAI_MODEL_NAME=${crewai_LLM_MODEL} 
     depends_on:
       - redis
     dns:
