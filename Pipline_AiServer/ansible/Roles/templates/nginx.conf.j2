@@ -1,42 +1,52 @@
-
 server {
     listen 80;
-    server_name 158.158.99.245;
+    server_name {{ your_domain_or_ip_here }};
 
-    # Static files for Reporting System
+    # ============================
+    # Reporting System Static Files
+    # ============================
     location /reporting/static/ {
-        root /var/www/{{ reporting_container_name }};
+        alias /var/www/{{ reporting_container_name }}/;
     }
 
+    # ============================
     # Reporting System API
+    # ============================
     location /reporting/ {
-        proxy_pass http://127.0.0.1:{{ reporting_port }};
+        proxy_pass http://127.0.0.1:{{ reporting_port }}/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection keep-alive;
+        proxy_set_header Connection "keep-alive";
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
     }
 
-    # Data Embedding Static files
+    # ============================
+    # Embedding Static Files
+    # ============================
     location /embedding/static/ {
-        root /var/www/{{ embedding_container_name }};
+        alias /var/www/{{ embedding_container_name }}/;
     }
 
-    # Data Embedding API
+    # ============================
+    # Embedding API
+    # ============================
     location /embedding/ {
-        proxy_pass http://127.0.0.1:{{ embedding_port }};
+        proxy_pass http://127.0.0.1:{{ embedding_port }}/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection keep-alive;
+        proxy_set_header Connection "keep-alive";
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
     }
 
-    # Redirect root
+    # ============================
+    # Redirect root → reporting
+    # ============================
     location / {
         return 301 /reporting/;
     }
 }
+
 
 
