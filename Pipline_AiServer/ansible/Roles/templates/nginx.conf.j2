@@ -1,52 +1,43 @@
 server {
     listen 80;
-    server_name {{ server_domain_or_IP }};
+    server_name {{ your_domain_or_ip_here }};
 
-    # ============================
-    # Reporting System Static Files
-    # ============================
-    location /reporting/static/ {
-        alias /var/www/{{ reporting_container_name }}/;
+    # ========== FIX OPENAPI FOR EMBEDDING ==========
+    location /embedding/openapi.json {
+        proxy_pass http://127.0.0.1:{{ embedding_port }}/embedding/openapi.json;
     }
 
-    # ============================
-    # Reporting System API
-    # ============================
-    location /reporting/ {
-        proxy_pass http://127.0.0.1:{{ reporting_port }}/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "keep-alive";
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # ============================
-    # Embedding Static Files
-    # ============================
-    location /embedding/static/ {
-        alias /var/www/{{ embedding_container_name }}/;
-    }
-
-    # ============================
     # Embedding API
-    # ============================
     location /embedding/ {
         proxy_pass http://127.0.0.1:{{ embedding_port }}/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "keep-alive";
+        proxy_set_header Connection keep-alive;
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
     }
 
-    # ============================
-    # Redirect root → reporting
-    # ============================
+    # ========== FIX OPENAPI FOR REPORTING ==========
+    location /reporting/openapi.json {
+        proxy_pass http://127.0.0.1:{{ reporting_port }}/reporting/openapi.json;
+    }
+
+    # Reporting API
+    location /reporting/ {
+        proxy_pass http://127.0.0.1:{{ reporting_port }}/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection keep-alive;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Redirect root
     location / {
         return 301 /reporting/;
     }
 }
+
 
 
 
