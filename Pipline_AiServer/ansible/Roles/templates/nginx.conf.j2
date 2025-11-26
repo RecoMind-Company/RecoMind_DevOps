@@ -3,25 +3,30 @@ server {
     server_name {{ server_domain_or_IP }};
 
     # ============================
+    # Fix: OpenAPI من الجذر
+    # ============================
+    location = /openapi.json {
+        proxy_pass http://127.0.0.1:{{ reporting_port }}/openapi.json;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    # ============================
     # Reporting System Static Files
     # ============================
     location /reporting/static/ {
         alias /var/www/{{ reporting_container_name }}/;
-        autoindex off;
     }
 
     # ============================
     # Reporting System API
     # ============================
     location /reporting/ {
-        proxy_pass http://{{ reporting_container_name }}:{{ reporting_port }}/;
+        proxy_pass http://127.0.0.1:{{ reporting_port }}/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection "keep-alive";
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
 
@@ -30,32 +35,27 @@ server {
     # ============================
     location /embedding/static/ {
         alias /var/www/{{ embedding_container_name }}/;
-        autoindex off;
     }
 
     # ============================
     # Embedding System API
     # ============================
     location /embedding/ {
-        proxy_pass http://{{ embedding_container_name }}:{{ embedding_port }}/;
+        proxy_pass http://127.0.0.1:{{ embedding_port }}/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection "keep-alive";
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
 
     # ============================
     # Redirect root → reporting
     # ============================
-    location = / {
+    location / {
         return 301 /reporting/;
     }
 }
-
 
 
 
