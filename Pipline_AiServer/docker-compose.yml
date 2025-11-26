@@ -3,8 +3,8 @@ services:
   # Service 1: The Redis Queue
   redis:
     image: redis:7-alpine
-    container_name: recomind-ingestion-redis
-    hostname: recomind-ingestion-redis
+    container_name: recomind-redis
+    hostname: recomind-redis
     ports:
       - "6379:6379"
 
