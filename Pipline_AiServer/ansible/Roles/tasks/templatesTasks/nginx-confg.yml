@@ -9,13 +9,13 @@
 - name: Deploy Nginx configuration
   template:
     src: nginx.conf.j2
-    dest: /etc/nginx/sites-available/{{ embedding_container_name }}
+    dest: /etc/nginx/sites-available/recomind-vector-server
   become: yes
 
 - name: Enable Nginx site
   file:
-    src: /etc/nginx/sites-available/{{ embedding_container_name }}
-    dest: /etc/nginx/sites-enabled/{{ embedding_container_name }}
+    src: /etc/nginx/sites-available/recomind-vector-server
+    dest: /etc/nginx/sites-enabled/recomind-vector-server
     state: link
   become: yes
 
