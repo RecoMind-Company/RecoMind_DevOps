@@ -6,7 +6,7 @@ server {
     # Embedding Static Files
     # ============================
     location /static/ {
-        root /var/www/{{ embedding_container_name }}/;
+        root /var/www/{{ embedding_container_name }};
     }
 
     # ============================
