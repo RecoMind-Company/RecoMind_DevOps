@@ -2,14 +2,7 @@ server {
     listen 80;
     server_name {{ server_domain_or_IP }};
 
-    # ============================
-    # Fix: OpenAPI من الجذر
-    # ============================
-    location = /openapi.json {
-        proxy_pass http://127.0.0.1:{{ reporting_port }}/openapi.json;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-    }
+
 
     # ============================
     # Reporting System Static Files
