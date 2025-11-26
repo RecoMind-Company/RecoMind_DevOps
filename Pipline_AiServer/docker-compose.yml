@@ -60,7 +60,7 @@ services:
   reporting_system_worker:
     image: hossamtaha9/recomind-ai-vector-reporting_system:latest
     container_name: recomind-reporting-system-worker
-    command: celery -A reporting_celery_worker.celery_app worker --loglevel=info -P gevent
+    command: celery -A celery_worker.celery_app worker --loglevel=info -P gevent
     env_file:
       - .env  # The worker also needs all the secrets
     depends_on:
