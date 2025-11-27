@@ -64,6 +64,11 @@ services:
     command: celery -A celery_worker.celery_app worker --loglevel=info -P gevent
     env_file:
       - .env  # The worker also needs all the secrets
+
+    environment:
+      - OPENAI_API_KEY=${OPENROUTER_API_KEY}
+      - OPENAI_API_BASE=${BASE_URL}
+      - OPENAI_MODEL_NAME=${crewai_LLM_MODEL}
     depends_on:
       - redis
       - reporting_system_api
