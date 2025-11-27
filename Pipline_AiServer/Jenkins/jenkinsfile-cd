@@ -128,7 +128,8 @@ pipeline{
                     echo "Pulling Docker Image on AI Server"
                     ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
                         docker login -u $DOCKERHUB_USR -p $DOCKERHUB_PSW &&
-                        docker pull ${IMAGE_NAME}:${TAG} "
+                        docker pull ${IMAGE_NAME}-data_embedding:${TAG} "
+                        docker pull ${IMAGE_NAME}-reporting_system:${TAG} "
                     '''
                 }
             }
