@@ -95,7 +95,8 @@ pipeline {
         stage('Trivy Security Scan') {
             steps {
                 sh """
-                    trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME:$TAG
+                    trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME-reporting_system:$TAG
+                    trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_NAME-data_embedding:$TAG
                 """
             }
         }
