@@ -47,9 +47,9 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - OPENAI_API_KEY=${OPENROUTER_API_KEY}
       - OPENAI_API_BASE=${BASE_URL}
       - OPENAI_MODEL_NAME=${crewai_LLM_MODEL} 
+      - OPENAI_API_KEY=${OPENROUTER_API_KEY}
       # Force Celery to run as root with pickle serializer
     depends_on:
       - redis
