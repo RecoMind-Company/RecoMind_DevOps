@@ -50,7 +50,7 @@ services:
       - OPENAI_API_KEY=${OPENROUTER_API_KEY}
       - OPENAI_API_BASE=${BASE_URL}
       - OPENAI_MODEL_NAME=${crewai_LLM_MODEL} 
-      - C_FORCE_ROOT=true # Force Celery to run as root with pickle serializer
+      # Force Celery to run as root with pickle serializer
     depends_on:
       - redis
     dns:
