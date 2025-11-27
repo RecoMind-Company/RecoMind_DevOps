@@ -117,23 +117,6 @@ pipeline{
             }
         }
 
-        stage('pull Docker Image on AI Server') {
-            steps {
-                withCredentials([
-                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
-                    usernamePassword(credentialsId: 'Docker_Hub_Hossam', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')
-                ]) {
-                    sh '''
-
-                    echo "Pulling Docker Image on AI Server"
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
-                        docker login -u $DOCKERHUB_USR -p $DOCKERHUB_PSW &&
-                        docker pull ${IMAGE_NAME}-data_embedding:${TAG} 
-                        docker pull ${IMAGE_NAME}-reporting_system:${TAG} "
-                    '''
-                }
-            }
-        }
 
         stage('stop Docker Container on AI Server') {
             steps {
@@ -149,6 +132,27 @@ pipeline{
                 }
             }
         }
+
+
+
+        stage('pull Docker Image on AI Server') {
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
+                    usernamePassword(credentialsId: 'Docker_Hub_Hossam', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')
+                ]) {
+                    sh '''
+
+                    echo "Pulling Docker Image on AI Server"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
+                        docker login -u $DOCKERHUB_USR -p $DOCKERHUB_PSW &&
+                        docker compose pull "
+                    '''
+                }
+            }
+        }
+
+        
 
 
         stage('start Docker Container on AI Server') {
