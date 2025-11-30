@@ -1,8 +1,8 @@
 variable "name_rg" {
-    default = "DevOpsRG_Backend"
+    default = "DevOps_Backend_Rg"
 }
 variable "location_rg" {
-    default = "spaincentral"
+    default = "swedencentral"
 }
 
 variable "subscription_id" {}
