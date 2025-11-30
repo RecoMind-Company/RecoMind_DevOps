@@ -105,6 +105,15 @@
 #     value = azurerm_linux_virtual_machine.vm.admin_username
 # }
 
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">= 3.90.0" # مثال لأحدث نسخة
+    }
+  }
+}
+
 
 
 provider "azurerm" {
@@ -210,7 +219,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   name                = "high-backend-vm"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  size                = "Standard_B2ls"
+  size                = "Standard_B2s_v2"
   admin_username      = "backendserver"
   network_interface_ids = [azurerm_network_interface.nic.id]
 
