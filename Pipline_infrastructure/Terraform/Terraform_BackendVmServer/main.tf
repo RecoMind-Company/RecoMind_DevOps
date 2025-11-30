@@ -210,7 +210,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   name                = "high-backend-vm"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  size                = "Standard_B2ms"
+  size                = "Standard_B2ls"
   admin_username      = "backendserver"
   network_interface_ids = [azurerm_network_interface.nic.id]
 
