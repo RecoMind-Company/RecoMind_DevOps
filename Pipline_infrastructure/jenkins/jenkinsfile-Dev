@@ -13,6 +13,12 @@ pipeline {
             defaultValue: false, 
             description: 'Skip Ansible and run Terraform only'
         )
+
+        string(
+            name: 'Terraform_DIR', 
+            defaultValue: '', 
+            description: 'Directory for Terraform files (if empty, uses default path)'
+        )
     }
 
     environment { 
@@ -33,7 +39,7 @@ pipeline {
         stage('Terraform Init') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
+                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'rm -rf .terraform .terraform.lock.hcl'
                     sh 'terraform init -reconfigure'
                 }
@@ -43,7 +49,7 @@ pipeline {
         stage('Terraform Validate') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
+                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'terraform validate'
                 }
             }
@@ -52,7 +58,7 @@ pipeline {
         stage('ssh-keyscan') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
+                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     withCredentials([
                         sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
                     ]) {
@@ -74,7 +80,7 @@ pipeline {
         stage('Terraform Plan') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
+                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'terraform plan -out=tfplan'
                 }
             }
@@ -83,7 +89,7 @@ pipeline {
         stage('Terraform Apply') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
+                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'terraform apply -auto-approve tfplan'
                 }
             }
@@ -92,7 +98,7 @@ pipeline {
         stage('Get Public IP and Server username') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer') {
+                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     script {
                         
                         env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
@@ -110,13 +116,13 @@ pipeline {
         stage('Archive Outputs') {
             when { expression { return !params.MANUAL_PUBLIC_IP } }
             steps {
-                archiveArtifacts artifacts: 'Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/*', fingerprint: true
+                archiveArtifacts artifacts: "Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/*", fingerprint: true
             }
         }
 
         stage('Detect IP & Save Global') {
             steps {
-                dir('Pipline_infrastructure/Terraform/Terraform_AIVmServer'){
+                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}"){
                     script {
                         env.ipToUse = env.PUBLIC_IP ?: sh(script: "cat outputs/server_ip.txt", returnStdout: true).trim()
                         if (!env.ipToUse) {
@@ -134,7 +140,7 @@ pipeline {
         stage('Detect Server Name & Save Global ') {
             steps {
                 script {
-                    env.server_Name = sh(script: "cat Pipline_infrastructure/Terraform/Terraform_AIVmServer/outputs/server_Name.txt", returnStdout: true).trim()
+                    env.server_Name = sh(script: "cat Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt", returnStdout: true).trim()
                     if (!env.server_Name) {
                         error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
                     }
