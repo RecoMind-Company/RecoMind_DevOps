@@ -106,14 +106,14 @@ resource "azurerm_linux_virtual_machine" "vm" {
     name                = "Backend-VM-Server"
     resource_group_name = data.azurerm_resource_group.rg.name
     location            = data.azurerm_resource_group.rg.location
-    size                = "Standard_D4s_v3"
-    admin_username      = "AI_Server"
+    size                = "B2s"
+    admin_username      = "Backend_Server"
     network_interface_ids = [
         azurerm_network_interface.nic.id,
     ]
 
     admin_ssh_key {
-        username   = "AI_Server"
+        username   = "Backend_Server"
         public_key = var.ssh_public_key
     }
 
