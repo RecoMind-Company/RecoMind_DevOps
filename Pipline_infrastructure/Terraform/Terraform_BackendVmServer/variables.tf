@@ -2,7 +2,7 @@ variable "name_rg" {
     default = "DevOpsRG_Backend"
 }
 variable "location_rg" {
-    default = "eastus2"
+    default = "eastus"
 }
 
 variable "subscription_id" {}
