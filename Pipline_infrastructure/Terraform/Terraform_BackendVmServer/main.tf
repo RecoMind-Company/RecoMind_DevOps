@@ -70,7 +70,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
     name                = "Backend-VM-Server"
     resource_group_name = data.azurerm_resource_group.rg.name
     location            = data.azurerm_resource_group.rg.location
-    size                = "B2s"
+    size                = "Standard_B2ms"
     admin_username      = "Backend_Server"
     network_interface_ids = [
         azurerm_network_interface.nic.id,
