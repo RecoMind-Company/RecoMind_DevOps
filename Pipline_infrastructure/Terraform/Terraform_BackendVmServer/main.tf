@@ -36,6 +36,54 @@ resource "azurerm_subnet" "subnet" {
     address_prefixes     = ["10.0.2.0/24"]
 }
 
+resource "azurerm_network_security_group" "nsg" {
+  name                = "myNSG"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "app"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "8000"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "http"
+    priority                   = 1000
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+# ربط NSG بالـ Subnet
+resource "azurerm_subnet_network_security_group_association" "subnet_nsg" {
+  subnet_id                 = azurerm_subnet.subnet.id
+  network_security_group_id = azurerm_network_security_group.nsg.id
+}
+
 resource "azurerm_public_ip" "public_ip" {
     name                = "vm-public-ip"
     location            = azurerm_resource_group.rg.location
@@ -45,6 +93,7 @@ resource "azurerm_public_ip" "public_ip" {
 
     zones = ["1", "2", "3"]
 }
+
 
 resource "azurerm_network_interface" "nic" {
     name                = "vm-nic"
