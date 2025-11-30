@@ -29,42 +29,6 @@ data "azurerm_subnet" "subnet" {
 data "azurerm_network_security_group" "nsg" {
     name                = "myNSG"
     resource_group_name = data.azurerm_resource_group.rg.name
-
-    security_rule {
-        name                       = "SSH"
-        priority                   = 1001
-        direction                  = "Inbound"
-        access                     = "Allow"
-        protocol                   = "Tcp"
-        source_port_range          = "*"
-        destination_port_range     = "22"
-        source_address_prefix      = "*"
-        destination_address_prefix = "*"
-    }
-
-    security_rule {
-        name                       = "app"
-        priority                   = 100
-        direction                  = "Inbound"
-        access                     = "Allow"
-        protocol                   = "Tcp"
-        source_port_range          = "*"
-        destination_port_range     = "8000"
-        source_address_prefix      = "*"
-        destination_address_prefix = "*"
-    }
-
-    security_rule {
-        name                       = "http"
-        priority                   = 1000
-        direction                  = "Inbound"
-        access                     = "Allow"
-        protocol                   = "Tcp"
-        source_port_range          = "*"
-        destination_port_range     = "80"
-        source_address_prefix      = "*"
-        destination_address_prefix = "*"
-    }
 }
 
 # ربط NSG بالـ Subnet
