@@ -15,10 +15,10 @@ pipeline {
         )
 
 
-        stringParam(
+        string(
             name: 'TERRAFORM_DIR', 
             defaultValue: '', 
-            description: 'Enter Terraform directory to use different Terraform directory'
+            description: 'Directory of the Terraform configuration to use'
         )
     }
 
