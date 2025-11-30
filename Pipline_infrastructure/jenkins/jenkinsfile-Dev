@@ -15,7 +15,7 @@ pipeline {
         )
 
 
-        booleanParam(
+        stringParam(
             name: 'TERRAFORM_DIR', 
             defaultValue: '', 
             description: 'Enter Terraform directory to use different Terraform directory'
