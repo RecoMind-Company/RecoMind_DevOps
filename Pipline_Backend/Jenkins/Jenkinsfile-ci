@@ -83,6 +83,16 @@ pipeline{
                 
             }
         }
+
+        stage('Prepare Trivy Template') {
+            steps {
+                sh '''
+                    mkdir -p trivy-templates
+                    wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O trivy-templates/html.tpl
+                '''
+            }
+        }
+
         
         stage('Trivy Security Scan') {
             steps {
