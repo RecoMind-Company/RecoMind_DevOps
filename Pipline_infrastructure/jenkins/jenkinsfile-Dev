@@ -32,12 +32,15 @@ pipeline {
         TF_VAR_tenant_id        = credentials('TENANT_ID')
         TF_VAR_client_id        = credentials('CLIENT_ID')
         TF_VAR_client_secret    = credentials('CLIENT_SECRET')
+        
+        // 🔥 إضافة shared output directory
+        SHARED_OUTPUTS = "${WORKSPACE}/shared_outputs"
     }
 
     stages {
 
         stage('Terraform Init') {
-            when { expression { return !params.SKIP_TERRAFORM } }
+            when { expression { return !params. SKIP_TERRAFORM } }
             steps {
                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'rm -rf .terraform .terraform.lock.hcl'
@@ -47,7 +50,7 @@ pipeline {
         }
 
         stage('Terraform Validate') {
-            when { expression { return !params.SKIP_TERRAFORM } }
+            when { expression { return !params. SKIP_TERRAFORM } }
             steps {
                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'terraform validate'
@@ -56,7 +59,7 @@ pipeline {
         }
 
         stage('ssh-keyscan') {
-            when { expression { return !params.SKIP_TERRAFORM } }
+            when { expression { return ! params.SKIP_TERRAFORM } }
             steps {
                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     withCredentials([
@@ -78,7 +81,7 @@ pipeline {
         }
 
         stage('Terraform Plan') {
-            when { expression { return !params.SKIP_TERRAFORM } }
+            when { expression { return !params. SKIP_TERRAFORM } }
             steps {
                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'terraform plan -out=tfplan'
@@ -98,53 +101,53 @@ pipeline {
         stage('Get Public IP and Server username') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+                dir("Pipline_infrastructure/Terraform/${params. Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     script {
-                        
                         env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
                         echo "Public IP is: ${env.PUBLIC_IP}"
-                        env.SERVER_NAME = sh(script: "terraform output -raw vm_admin_username", returnStdout: true).trim()
-                        echo "Server Name is: ${env.SERVER_NAME}"
-                        sh 'mkdir -p outputs'
-                        writeFile file: 'outputs/server_ip.txt', text: env.PUBLIC_IP
-                        writeFile file: 'outputs/server_Name.txt', text: env.SERVER_NAME
+                        env. SERVER_NAME = sh(script: "terraform output -raw vm_admin_username", returnStdout: true).trim()
+                        echo "Server Name is: ${env. SERVER_NAME}"
+                        
+                        // 🔥 احفظ في shared directory بره الـ Terraform folder
+                        sh """
+                        mkdir -p ${SHARED_OUTPUTS}
+                        echo '${env.PUBLIC_IP}' > ${SHARED_OUTPUTS}/server_ip.txt
+                        echo '${env.SERVER_NAME}' > ${SHARED_OUTPUTS}/server_Name.txt
+                        """
                     }
                 }
             }
         }
 
         stage('Archive Outputs') {
-            when { expression { return !params.MANUAL_PUBLIC_IP } }
+            when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                archiveArtifacts artifacts: "Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/*", fingerprint: true
+                archiveArtifacts artifacts: "shared_outputs/*", fingerprint: true
             }
         }
 
         stage('Detect IP & Save Global') {
             steps {
-                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}"){
-                    script {
-                        env.ipToUse = env.PUBLIC_IP ?: sh(script: "cat outputs/server_ip.txt", returnStdout: true).trim()
-                        if (!env.ipToUse) {
-                            error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
-                        }
-                        echo "✅ Using IP: ${env.ipToUse}"
+                script {
+                    // 🔥 اقرأ من الـ shared directory
+                    env.ipToUse = env.PUBLIC_IP ?: sh(script: "cat ${SHARED_OUTPUTS}/server_ip.txt", returnStdout: true).trim()
+                    if (!env.ipToUse) {
+                        error "No PUBLIC_IP available!"
                     }
-
+                    echo "✅ Using IP: ${env.ipToUse}"
                 }
-
-                
             }
         }
 
-        stage('Detect Server Name & Save Global ') {
+        stage('Detect Server Name & Save Global') {
             steps {
                 script {
-                    env.server_Name = sh(script: "cat Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt", returnStdout: true).trim()
+                    // 🔥 اقرأ من الـ shared directory
+                    env.server_Name = env.SERVER_NAME ?: sh(script: "cat ${SHARED_OUTPUTS}/server_Name.txt", returnStdout: true). trim()
                     if (!env.server_Name) {
-                        error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
+                        error "No Server Name available!"
                     }
-                    echo "✅ Using IP: ${env.server_Name}"
+                    echo "✅ Using Server Name: ${env.server_Name}"
                 }
             }
         }
@@ -157,7 +160,7 @@ pipeline {
                     sh '''
                     mkdir -p ~/.ssh
                     cp "$SSH_KEY_FILE" ~/.ssh/id_rsa
-                    chmod 600 ~/.ssh/id_rsa
+                    chmod 600 ~/. ssh/id_rsa
 
                     echo "✅ SSH key setup complete"
                     echo "Key format check:"
@@ -200,16 +203,13 @@ pipeline {
             }
         }
 
-
-
         stage('run Ansible Playbook') {
-
+            when { expression { return !params. SKIP_ANSIBLE } }
             steps {
                 dir('Pipline_infrastructure/ansible') {
                     sh 'ansible-playbook -i ansible_inventory.ini SetupVmPlaybook.yml'
                 }
             }
-            
         }
 
         stage('Test connectivity to AI Server') {
@@ -220,7 +220,6 @@ pipeline {
                     ansible all -i ansible_inventory.ini -m ping
                     '''
                 }
-                
             }
         }
     }
