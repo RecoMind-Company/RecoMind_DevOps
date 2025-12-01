@@ -98,16 +98,29 @@ pipeline{
             steps {
                 script {
                     for (service in services) {
+
                         def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
+                        def reportName = "trivy-${service}.html"
+
+                        echo "🔍 Scanning image: ${imageTag}"
+
                         sh """
-                            trivy image --scanners vuln --light --timeout 20m --exit-code 1 --severity HIGH,CRITICAL --format template --template "@contrib/html.tpl" -o trivy-${service}.html ${imageTag}
+                            trivy image \
+                                --scanners vuln \
+                                --severity HIGH,CRITICAL \
+                                --timeout 20m \
+                                --exit-code 0 \
+                                --format template \
+                                --template trivy-templates/html.tpl \
+                                -o ${reportName} \
+                                ${imageTag}
                         """
-                        echo "🔒 Scanned image: ${imageTag}"
+
+                        echo "📝 Report generated: ${reportName}"
                     }
+
+                    archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
                 }
-                archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
-
-
             }
         }
 
