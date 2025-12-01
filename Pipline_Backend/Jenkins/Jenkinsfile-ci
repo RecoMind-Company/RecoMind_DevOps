@@ -90,11 +90,14 @@ pipeline{
                     for (service in services) {
                         def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
                         sh """
-                            trivy image --scanners vuln --light --timeout 20m --exit-code 0 --severity HIGH,CRITICAL ${imageTag}
+                            trivy image --scanners vuln --light --timeout 20m --exit-code 1 --severity HIGH,CRITICAL --format template --template "@contrib/html.tpl" -o trivy-${service}.html ${imageTag}
                         """
                         echo "🔒 Scanned image: ${imageTag}"
                     }
                 }
+                archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
+
+
             }
         }
 
