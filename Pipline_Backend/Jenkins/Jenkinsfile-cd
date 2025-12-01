@@ -40,7 +40,7 @@ pipeline{
 
                     mkdir -p Pipline_Backend/ansible/Roles/files/
 
-                    echo "=== Copying docker-compose.yml from src/data_embedding/ ==="
+                    
                     cp Pipline_Backend/docker-compose.yml \
                     Pipline_Backend/ansible/Roles/files/docker-compose.yml
                     
