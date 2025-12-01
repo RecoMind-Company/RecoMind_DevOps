@@ -1,0 +1,149 @@
+Pipline{
+    agent any
+
+    environment {
+        DOCKERHUB = credentials('Docker_Hub_Backend')          // credentials من Jenkins (username/password)
+        SONAR_AUTH_TOKEN = credentials('SonarQube_jenkins') // token SonarQube
+        IMAGE_NAME = "recomind/backend"
+        TAG = "latest"
+        SERVICES_DIR = "Microservices"
+        }
+
+    stages {
+        
+        stage("checkout Source code") {
+            steps {
+                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
+            }
+        }
+
+        stage('OWASP Dependency Check') {
+            steps {
+                sh 'mkdir -p dependency-check-report'
+                // استخدام Plugin بدلاً من CLI
+                dependencyCheck additionalArguments: '--scan . --format XML --out dependency-report',
+                                odcInstallation: 'OWASP-Dependency'
+            }
+        }
+
+        stage('Archive Dependency Report') {
+            steps {
+                archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
+            }
+        }
+
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    def scannerHome = tool 'SonarQube_Scanner'
+                    
+                    withSonarQubeEnv('SonarCloud_Server') {
+                        withCredentials([string(credentialsId: 'sonarCloud', variable: 'TOKEN')]) {
+                            sh """
+                                ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.projectKey=recomind-backend \
+                                -Dsonar.organization=recomind-company \
+                                -Dsonar.host.url=https://sonarcloud.io \
+                                -Dsonar.sources=. \
+                                -Dsonar.login=$TOKEN
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Discover Microservices') {
+            steps {
+                    script {
+                    services = sh(
+                        script: "ls -d ${SERVICES_DIR}/*/ | xargs -n 1 basename",
+                        returnStdout: true
+                    ).trim().split("\n")
+
+                    echo "🔍 Found services: ${services}"
+                }
+
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    for (service in services) {
+                        def imageTag = "${IMAGE_NAME}-${service}:${TAG}"
+                        sh """
+                            docker build -t ${imageTag} ${SERVICES_DIR}/${service}
+                        """
+                        echo "🛠️ Built image: ${imageTag}"
+                    }
+                }
+                
+            }
+        }
+        
+        stage('Trivy Security Scan') {
+            steps {
+                script {
+                    for (service in services) {
+                        def imageTag = "${IMAGE_NAME}-${service}:${TAG}"
+                        sh """
+                            trivy image --scanners vuln --light --timeout 20m --exit-code 0 --severity HIGH,CRITICAL ${imageTag}
+                        """
+                        echo "🔒 Scanned image: ${imageTag}"
+                    }
+                }
+            }
+        }
+
+        stage('DockerHub Login') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Hossam', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
+            }
+        }
+
+
+        stage('Push Docker Images') {
+            steps {
+                script {
+                    // الحد الأقصى للـ parallel pushes
+                    int maxParallel = 3
+                    
+                    // تقسيم الـ services لمجموعات كل مجموعة بعدد maxParallel
+                    def chunks = services.collate(maxParallel)
+                    
+                    int groupIndex = 1
+                    for (chunk in chunks) {
+                        echo "➡️ Pushing group ${groupIndex}/${chunks.size()} in parallel..."
+                        
+                        def pushSteps = [:]
+                        
+                        for (service in chunk) {
+                            def serviceName = service // مهم داخل closure
+                            pushSteps["Push ${serviceName}"] = {
+                                def imageTag = "${IMAGE_NAME}-${serviceName}:${TAG}"
+                                echo "⏳ Pushing image: ${imageTag}"
+                                sh "docker push ${imageTag}"
+                                echo "✅ Pushed image: ${imageTag}"
+                            }
+                        }
+                        
+                        // تشغيل المجموعة الحالية بشكل parallel
+                        parallel pushSteps
+                        
+                        groupIndex++
+                    }
+                    
+                    echo "🎉 All Docker images have been pushed successfully!"
+                }
+            }
+        }
+
+    }
+}
+
+
+
