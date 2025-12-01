@@ -47,7 +47,7 @@ pipeline{
                                 -Dsonar.organization=recomind-company \
                                 -Dsonar.host.url=https://sonarcloud.io \
                                 -Dsonar.sources=. \
-                                -Dsonar.login=$TOKEN
+                                -Dsonar.login="${TOKEN}"
                             """
                         }
                     }
