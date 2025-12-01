@@ -110,39 +110,40 @@ pipeline{
         stage('Push Docker Images') {
             steps {
                 script {
-                    int maxParallel = 3
+                    int maxParallel = 3  // الحد الأقصى لعدد pushes متوازية
                     def serviceList = services.toList()  // تحويل Array إلى List
                     def chunks = serviceList.collate(maxParallel)
-                    
-                    // تسجيل الدخول إلى Docker Hub باستخدام Credentials من Jenkins
-                    withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                        
-                        int groupIndex = 1
-                        for (chunk in chunks) {
-                            echo "➡️ Pushing group ${groupIndex}/${chunks.size()} in parallel..."
-                            
-                            def pushSteps = [:]
-                            
-                            for (service in chunk) {
-                                def serviceName = service
-                                pushSteps["Push ${serviceName}"] = {
+
+                    int groupIndex = 1
+                    for (chunk in chunks) {
+                        echo "➡️ Pushing group ${groupIndex}/${chunks.size()} in parallel..."
+
+                        def pushSteps = [:]
+
+                        for (service in chunk) {
+                            def serviceName = service  // مهم داخل closure
+                            pushSteps["Push ${serviceName}"] = {
+                                // تسجيل الدخول داخل كل push step
+                                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+
                                     def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
                                     echo "⏳ Pushing image: ${imageTag}"
                                     sh "docker push ${imageTag}"
                                     echo "✅ Pushed image: ${imageTag}"
                                 }
                             }
-                            
-                            parallel pushSteps
-                            groupIndex++
                         }
+
+                        parallel pushSteps  // تشغيل المجموعة بشكل parallel
+                        groupIndex++
                     }
-                    
+
                     echo "🎉 All Docker images have been pushed successfully!"
                 }
             }
         }
+
 
 
 
