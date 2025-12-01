@@ -73,7 +73,7 @@ pipeline{
             steps {
                 script {
                     for (service in services) {
-                        def imageTag = "${IMAGE_NAME}-${service}:${TAG}"
+                        def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
                         sh """
                             docker build -t ${imageTag} ${SERVICES_DIR}/${service}
                         """
@@ -88,7 +88,7 @@ pipeline{
             steps {
                 script {
                     for (service in services) {
-                        def imageTag = "${IMAGE_NAME}-${service}:${TAG}"
+                        def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
                         sh """
                             trivy image --scanners vuln --light --timeout 20m --exit-code 0 --severity HIGH,CRITICAL ${imageTag}
                         """
@@ -125,7 +125,7 @@ pipeline{
                         for (service in chunk) {
                             def serviceName = service // مهم داخل closure
                             pushSteps["Push ${serviceName}"] = {
-                                def imageTag = "${IMAGE_NAME}-${serviceName}:${TAG}"
+                                def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
                                 echo "⏳ Pushing image: ${imageTag}"
                                 sh "docker push ${imageTag}"
                                 echo "✅ Pushed image: ${imageTag}"
