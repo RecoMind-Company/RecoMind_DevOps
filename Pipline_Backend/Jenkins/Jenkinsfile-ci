@@ -4,7 +4,7 @@ pipeline{
     environment {
         DOCKERHUB = credentials('Docker_Hub_Backend')          // credentials من Jenkins (username/password)
         SONAR_AUTH_TOKEN = credentials('SonarQube_jenkins') // token SonarQube
-        IMAGE_NAME = "recomind/backend"
+        IMAGE_NAME = "redasaad1234/backend"
         TAG = "latest"
         SERVICES_DIR = "Microservices"
         }
