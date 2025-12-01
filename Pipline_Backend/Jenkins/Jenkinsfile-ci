@@ -110,11 +110,9 @@ pipeline{
         stage('Push Docker Images') {
             steps {
                 script {
-                    // الحد الأقصى للـ parallel pushes
                     int maxParallel = 3
-                    
-                    // تقسيم الـ services لمجموعات كل مجموعة بعدد maxParallel
-                    def chunks = services.collate(maxParallel)
+                    def serviceList = services.toList()  // تحويل Array إلى List
+                    def chunks = serviceList.collate(maxParallel)
                     
                     int groupIndex = 1
                     for (chunk in chunks) {
@@ -123,7 +121,7 @@ pipeline{
                         def pushSteps = [:]
                         
                         for (service in chunk) {
-                            def serviceName = service // مهم داخل closure
+                            def serviceName = service
                             pushSteps["Push ${serviceName}"] = {
                                 def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
                                 echo "⏳ Pushing image: ${imageTag}"
@@ -132,9 +130,7 @@ pipeline{
                             }
                         }
                         
-                        // تشغيل المجموعة الحالية بشكل parallel
                         parallel pushSteps
-                        
                         groupIndex++
                     }
                     
@@ -142,6 +138,7 @@ pipeline{
                 }
             }
         }
+
 
     }
 }
