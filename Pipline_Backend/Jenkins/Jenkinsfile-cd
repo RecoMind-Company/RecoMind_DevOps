@@ -2,7 +2,7 @@ pipeline{
     agent any
 
     environment {
-        DOCKERHUB = credentials('Docker_Hub_backend')          // credentials من Jenkins (username/password)
+        DOCKERHUB = credentials('Docker_Hub_Backend')          // credentials من Jenkins (username/password)
         IMAGE_NAME = "redasaad1234/backend"
         TAG = "latest"
 
