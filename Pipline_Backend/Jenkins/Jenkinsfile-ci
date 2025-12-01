@@ -100,7 +100,7 @@ pipeline{
 
         stage('DockerHub Login') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Hossam', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                 }
             }
@@ -114,30 +114,36 @@ pipeline{
                     def serviceList = services.toList()  // تحويل Array إلى List
                     def chunks = serviceList.collate(maxParallel)
                     
-                    int groupIndex = 1
-                    for (chunk in chunks) {
-                        echo "➡️ Pushing group ${groupIndex}/${chunks.size()} in parallel..."
+                    // تسجيل الدخول إلى Docker Hub باستخدام Credentials من Jenkins
+                    withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
                         
-                        def pushSteps = [:]
-                        
-                        for (service in chunk) {
-                            def serviceName = service
-                            pushSteps["Push ${serviceName}"] = {
-                                def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
-                                echo "⏳ Pushing image: ${imageTag}"
-                                sh "docker push ${imageTag}"
-                                echo "✅ Pushed image: ${imageTag}"
+                        int groupIndex = 1
+                        for (chunk in chunks) {
+                            echo "➡️ Pushing group ${groupIndex}/${chunks.size()} in parallel..."
+                            
+                            def pushSteps = [:]
+                            
+                            for (service in chunk) {
+                                def serviceName = service
+                                pushSteps["Push ${serviceName}"] = {
+                                    def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
+                                    echo "⏳ Pushing image: ${imageTag}"
+                                    sh "docker push ${imageTag}"
+                                    echo "✅ Pushed image: ${imageTag}"
+                                }
                             }
+                            
+                            parallel pushSteps
+                            groupIndex++
                         }
-                        
-                        parallel pushSteps
-                        groupIndex++
                     }
                     
                     echo "🎉 All Docker images have been pushed successfully!"
                 }
             }
         }
+
 
 
     }
