@@ -171,7 +171,11 @@ pipeline{
         }
 
 
-
+        stage('Trigger CD Pipeline') {
+            steps {
+                build job: "Pipline-Backend-cd", wait: false
+            }
+        }
 
     }
 }

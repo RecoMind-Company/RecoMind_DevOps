@@ -1,0 +1,177 @@
+pipeline{
+    agent any
+
+    environment {
+        DOCKERHUB = credentials('Docker_Hub_backend')          // credentials من Jenkins (username/password)
+        IMAGE_NAME = "redasaad1234/backend"
+        TAG = "latest"
+
+    }
+
+    stages {
+
+
+        
+        stage('Get Artifacts from Pipeline Infrastructure') {
+            steps {
+                copyArtifacts(
+                    projectName: 'Pipline_Infrastructure',
+                    fingerprintArtifacts: true,
+                    selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
+                )
+            }
+        }
+
+        // stage('Get Artifacts docker-compose from CI Pipeline') {
+        //     steps {
+        //         copyArtifacts(
+        //             projectName: 'Pipline_data_embedding-ci',
+        //             fingerprintArtifacts: true,
+        //             selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
+        //         )
+        //     }
+        // }
+
+
+        stage('Prepare Ansible Files') {
+            steps {
+                sh '''
+                    rm Pipline_Backend/ansible/Roles/files || true
+
+                    mkdir -p Pipline_Backend/ansible/Roles/files/
+
+                    echo "=== Copying docker-compose.yml from src/data_embedding/ ==="
+                    cp Pipline_Backend/docker-compose.yml \
+                    Pipline_Backend/ansible/Roles/files/docker-compose.yml
+                    
+                    echo "=== Verification ==="
+                    ls -la Pipline_Backend/ansible/Roles/files/
+                    echo "\n=== File content preview ==="
+                    head -20 Pipline_Backend/ansible/Roles/files/docker-compose.yml
+                '''
+            }
+        }
+    
+
+
+
+
+        stage('Add Ip or Domain to Ansible Defaults') {
+            steps {
+                script {
+                    def publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_BackendVmServer/outputs/server_ip.txt').trim()
+                    sh """
+                    sed -i "s/^server_domain_or_IP:.*/server_domain_or_IP: '${publicIp}'/" Pipline_Backend/ansible/Roles/defaults/main.yml
+                    """
+
+                }
+            }
+        }
+
+
+
+        stage('connect to Ai Server ') {
+            
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
+                ]) {
+                    script{
+                        env.publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_BackendVmServer/outputs/server_ip.txt').trim()
+                        env.server_name = readFile('Pipline_infrastructure/Terraform/Terraform_BackendVmServer/outputs/server_Name.txt').trim()
+
+                        sh '''
+                        echo "Testing SSH connection to ${ipToUse}"
+                        ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "echo Connected successfully"
+                        '''
+
+                    }
+
+                    
+                }
+            }
+
+            
+        }
+
+        stage('create Ansible inventory file') {
+            steps {
+                dir('Pipline_AiServer/ansible') {
+                    sh """
+                    rm -f ansible_inventory.ini
+                    echo "[all]" | tee ansible_inventory.ini
+                    echo "server ansible_host=${publicIp} ansible_user=${server_Name} ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/id_rsa" | tee -a ansible_inventory.ini
+                    cat ansible_inventory.ini
+                    """
+                }
+            }
+        }
+
+
+
+        stage('Run Ansible Playbook') {
+            steps {
+                dir('Pipline_AiServer/ansible') {
+                    sh 'ansible-playbook -i ansible_inventory.ini playbook-cd.yml '
+                }
+            }
+        }
+
+
+        stage('stop Docker Container on AI Server') {
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+                ]) {
+                    sh '''
+                    echo "Running Docker Container on AI Server"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
+                        docker compose -f docker-compose.yml down --volumes --remove-orphans || true 
+                    "
+                    '''
+                }
+            }
+        }
+
+
+
+        stage('pull Docker Image on AI Server') {
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
+                    usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')
+                ]) {
+                    sh '''
+
+                    echo "Pulling Docker Image on AI Server"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
+                        docker login -u $DOCKERHUB_USR -p $DOCKERHUB_PSW &&
+                        docker compose pull "
+                    '''
+                }
+            }
+        }
+
+        
+
+
+        stage('start Docker Container on AI Server') {
+            steps {
+                withCredentials([
+                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+                ]) {
+                    sh '''
+                    echo "Running Docker Container on AI Server"
+                    ssh -T -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
+                        docker compose -f docker-compose.yml up -d
+                    "
+                    '''
+                }   
+            }
+        }
+
+
+    }
+
+}  
+
