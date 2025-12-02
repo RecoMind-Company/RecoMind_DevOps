@@ -28,6 +28,7 @@ pipeline{
                 copyArtifacts(
                     projectName: 'Pipeline_Backend_ci',
                     fingerprintArtifacts: true,
+                    filter: 'services.txt',
                     selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
                 )
             }
@@ -36,11 +37,7 @@ pipeline{
         stage('Discover Microservices') {
             steps {
                     script {
-                    services = sh(
-                        script: "ls -d ${SERVICES_DIR}/*/ | xargs -n 1 basename",
-                        returnStdout: true
-                    ).trim().split("\n")
-
+                    services = readFile('services.txt').trim().split("\n")
                     echo "🔍 Found services: ${services}"
                 }
 
