@@ -174,10 +174,10 @@ pipeline {
                 withCredentials([
                     sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
                 ]) {
-                    sh '''
-                    echo "Testing SSH connection to ${ipToUse}"
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_Name}@${ipToUse} "echo Connected successfully"
-                    '''
+                    sh """
+                    echo "Testing SSH connection to ${env.ipToUse}"
+                    ssh -o StrictHostKeyChecking=no -i "\$SSH_KEY_FILE" ${env.server_Name}@${env.ipToUse} "echo Connected successfully"
+                    """
                 }
             }
         }
