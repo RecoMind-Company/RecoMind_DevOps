@@ -180,7 +180,7 @@ pipeline{
 
         stage('Trigger CD Pipeline') {
             steps {
-                build job: "Pipline-Backend-cd", wait: false
+                build job: "Pipeline_Backend_cd", wait: false
             }
         }
 
