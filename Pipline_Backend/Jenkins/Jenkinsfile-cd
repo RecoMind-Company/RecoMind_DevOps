@@ -37,7 +37,7 @@ pipeline{
         stage('Discover Microservices') {
             steps {
                     script {
-                    services = readFile('services.txt').trim().split("\n")
+                    services = readFile('services.txt').trim().split("\n").collect { it.toLowerCase() }
                     echo "🔍 Found services: ${services}"
                 }
 
@@ -82,7 +82,7 @@ pipeline{
 
 
 
-        stage('connect to Ai Server ') {
+        stage('connect to backend Server ') {
             
             steps {
                 withCredentials([
