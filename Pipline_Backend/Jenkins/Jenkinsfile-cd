@@ -123,7 +123,7 @@ pipeline{
 
         stage('Run Ansible Playbook') {
             steps {
-                dir('Pipline_AiServer/ansible') {
+                dir('Pipline_Backend/ansible') {
                     sh 'ansible-playbook -i ansible_inventory.ini playbook-cd.yml '
                 }
             }
