@@ -176,7 +176,7 @@ pipeline {
                 ]) {
                     sh '''
                     echo "Testing SSH connection to ${ipToUse}"
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_Name}@${ipToUse} "echo Connected successfully"
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" $server_Name@${ipToUse} "echo Connected successfully"
                     '''
                 }
             }
