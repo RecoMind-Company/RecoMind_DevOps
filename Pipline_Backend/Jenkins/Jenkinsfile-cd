@@ -10,6 +10,17 @@ pipeline{
 
     stages {
 
+
+
+        stage('Get Artifacts from Pipeline Infrastructure') {
+            steps {
+                copyArtifacts(
+                    projectName: 'Pipline_Infrastructure',
+                    fingerprintArtifacts: true,
+                    selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
+                )
+            }
+        }
         
         
         stage('Get Artifacts from Pipeline Infrastructure') {
