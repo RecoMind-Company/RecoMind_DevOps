@@ -142,9 +142,9 @@ pipeline {
                 script {
                     env.server_Name = sh(script: "cat Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt", returnStdout: true).trim()
                     if (!env.server_Name) {
-                        error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
+                        error "No SERVER_NAME available! Ensure Terraform output 'vm_admin_username' is produced."
                     }
-                    echo "✅ Using IP: ${env.server_Name}"
+                    echo "✅ Using Server Name: ${env.server_Name}"
                 }
             }
         }
@@ -181,6 +181,14 @@ pipeline {
                 ]) {
                     sh '''
                     echo "Testing SSH connection to ${ipToUse}"
+                    if [ -z "${server_Name}" ]; then
+                        echo "❌ server_Name is empty — aborting SSH test. Check previous stages for errors."
+                        exit 2
+                    fi
+                    if [ -z "${ipToUse}" ]; then
+                        echo "❌ ipToUse is empty — aborting SSH test. Check previous stages for errors."
+                        exit 2
+                    fi
                     ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_Name}@${ipToUse} "echo Connected successfully"
                     '''
                 }
