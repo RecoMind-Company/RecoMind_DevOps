@@ -108,7 +108,7 @@ pipeline{
 
         stage('create Ansible inventory file') {
             steps {
-                dir('Pipline_AiServer/ansible') {
+                dir('Pipline_Backend/ansible') {
                     sh """
                     rm -f ansible_inventory.ini
                     echo "[all]" | tee ansible_inventory.ini
