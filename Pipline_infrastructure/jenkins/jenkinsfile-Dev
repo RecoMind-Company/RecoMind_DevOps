@@ -19,6 +19,16 @@ pipeline {
             defaultValue: '', 
             description: 'Directory for Terraform files (if empty, uses default path)'
         )
+        string(
+            name: 'MANUAL_PUBLIC_IP',
+            defaultValue: '',
+            description: 'Optional: provide a public IP to run Ansible when SKIP_TERRAFORM is true'
+        )
+        string(
+            name: 'MANUAL_SERVER_NAME',
+            defaultValue: '',
+            description: 'Optional: provide the VM admin username when SKIP_TERRAFORM is true'
+        )
     }
 
     environment { 
@@ -124,9 +134,9 @@ pipeline {
             steps {
                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}"){
                     script {
-                        env.ipToUse = env.PUBLIC_IP ?: sh(script: "cat outputs/server_ip.txt", returnStdout: true).trim()
+                        env.ipToUse = env.PUBLIC_IP ?: (params.MANUAL_PUBLIC_IP ?: (fileExists('outputs/server_ip.txt') ? sh(script: "cat outputs/server_ip.txt", returnStdout: true).trim() : ''))
                         if (!env.ipToUse) {
-                            error "No PUBLIC_IP available! Set MANUAL_PUBLIC_IP for manual run."
+                            error "No PUBLIC_IP available! Set the pipeline parameter 'MANUAL_PUBLIC_IP' for manual runs."
                         }
                         echo "✅ Using IP: ${env.ipToUse}"
                     }
@@ -140,9 +150,9 @@ pipeline {
         stage('Detect Server Name & Save Global ') {
             steps {
                 script {
-                    env.server_Name = sh(script: "cat Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt", returnStdout: true).trim()
+                    env.server_Name = env.SERVER_NAME ?: (params.MANUAL_SERVER_NAME ?: (fileExists("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt") ? sh(script: "cat Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt", returnStdout: true).trim() : ''))
                     if (!env.server_Name) {
-                        error "No SERVER_NAME available! Ensure Terraform output 'vm_admin_username' is produced."
+                        error "No SERVER_NAME available! Set the pipeline parameter 'MANUAL_SERVER_NAME' for manual runs or ensure Terraform produced 'vm_admin_username'."
                     }
                     echo "✅ Using Server Name: ${env.server_Name}"
                 }
