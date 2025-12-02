@@ -124,7 +124,7 @@ pipeline{
         stage('Run Ansible Playbook') {
             steps {
                 dir('Pipline_Backend/ansible') {
-                    sh 'ansible-playbook -i ansible_inventory.ini playbook-cd.yml '
+                    sh 'ansible-playbook -i ansible_inventory.ini Playbook-cd.yml '
                 }
             }
         }
