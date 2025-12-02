@@ -10,27 +10,31 @@ pipeline{
 
     stages {
 
-
+        
         
         stage('Get Artifacts from Pipeline Infrastructure') {
             steps {
                 copyArtifacts(
-                    projectName: 'Pipline_Infrastructure',
+                    projectName: 'Pipeline_Backend_ci',
                     fingerprintArtifacts: true,
                     selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
                 )
             }
         }
 
-        // stage('Get Artifacts docker-compose from CI Pipeline') {
-        //     steps {
-        //         copyArtifacts(
-        //             projectName: 'Pipline_data_embedding-ci',
-        //             fingerprintArtifacts: true,
-        //             selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
-        //         )
-        //     }
-        // }
+        stage('Discover Microservices') {
+            steps {
+                    script {
+                    services = sh(
+                        script: "ls -d ${SERVICES_DIR}/*/ | xargs -n 1 basename",
+                        returnStdout: true
+                    ).trim().split("\n")
+
+                    echo "🔍 Found services: ${services}"
+                }
+
+            }
+        }
 
 
         stage('Prepare Ansible Files') {
