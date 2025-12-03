@@ -20,7 +20,7 @@ server {
 
     # Serve ACME challenge files directly
     location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
+        alias /var/www/certbot/.well-known/acme-challenge/;
     }
 
     access_log /var/log/nginx/{{ domain_name }}_access.log;
