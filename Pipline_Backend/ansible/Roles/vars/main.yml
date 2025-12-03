@@ -6,6 +6,9 @@ expose_Ports: 8000
 
 domain_name: api.recomind.site
 
+active_services: "{{ services }}"
+
+
 
 services:
   - name: authenticationservice
