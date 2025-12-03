@@ -2,7 +2,7 @@
 {% if service.expose_to_nginx %}
 # Upstream for {{ service.name }}
 upstream {{ service.name }}_backend {
-    server {{ service.name }}:{{ service.port }};
+    server 127.0.0.1:{{ service.port }};
     keepalive 32;
 }
 
