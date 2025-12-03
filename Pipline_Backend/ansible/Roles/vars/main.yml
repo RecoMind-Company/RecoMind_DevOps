@@ -19,7 +19,7 @@ services:
   - name: databasesettingservice
     port: 8083
     expose_to_nginx: true
-    nginx_path: /api/users
+    nginx_path: /api/databasesetting
     env:
       - .env
 
@@ -27,25 +27,28 @@ services:
   - name: subscriptionservice
     port: 8084
     expose_to_nginx: true
-    nginx_path: /api/orders
+    nginx_path: /api/subscription
     env:
       - .env
 
 
   - name: planeservice
     port: 8085
-    expose_to_nginx: false
+    expose_to_nginx: true
+    nginx_path: /api/plane
     env:
       - .env
 
   - name: invitationservice
     port: 8086
-    expose_to_nginx: false
+    expose_to_nginx: true
+    nginx_path: /api/invitation
     env:
       - .env
 
   - name: companyservice
     port: 8087
-    expose_to_nginx: false
+    expose_to_nginx: true
+    nginx_path: /api/company
     env:
       - .env
