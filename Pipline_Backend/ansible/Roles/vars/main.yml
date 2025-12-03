@@ -21,7 +21,7 @@ services:
       - .env
 
   - name: authenticationservice
-    port: 8082
+    port: 8092
     volumes:
       - ./Auth/StaticFiles:/app/RecoMindAuthenticationAPI/StaticFiles/Images
     expose_to_nginx: true
