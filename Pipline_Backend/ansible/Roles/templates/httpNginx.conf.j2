@@ -1,3 +1,14 @@
+{% for service in active_services %}
+{% if service.expose_to_nginx %}
+# Upstream for {{ service.name }}
+upstream {{ service.name }}_backend {
+    server 127.0.0.1:{{ service.port }};
+    keepalive 32;
+}
+
+{% endif %}
+{% endfor %}
+
 # HTTP server ONLY
 server {
     listen 80;
@@ -8,11 +19,6 @@ server {
     error_log /var/log/nginx/{{ domain_name }}_error.log;
 
     client_max_body_size 50M;
-
-    # Serve ACME challenge files directly
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
 
 {% for service in active_services %}
 {% if service.expose_to_nginx %}
