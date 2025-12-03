@@ -16,7 +16,7 @@ services:
     volumes:
       - ./Auth/StaticFiles:/app/RecoMindAuthenticationAPI/StaticFiles/Images
     expose_to_nginx: true
-    nginx_path: /api/auth
+    nginx_path: /api/Authentication
     env:
       - .env
       
