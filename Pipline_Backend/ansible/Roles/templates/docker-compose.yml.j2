@@ -2,7 +2,11 @@ version: '3.8'
 
 services:
 {% for service in services %}
+{% if service.alt is defined %}
+  {{ service.alt }}:
+{% else %}
   {{ service.name }}:
+{% endif %}
     image: {{ docker_registry }}-{{ service.name }}:latest
 {% if service.alt is defined %}
     container_name: {{ service.alt }}
