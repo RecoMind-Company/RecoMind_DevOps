@@ -24,6 +24,7 @@ server {
     }
 }
 
+
 # HTTPS server
 server {
     listen 443 ssl http2;
@@ -70,6 +71,6 @@ server {
 
     location = / {
         add_header Content-Type application/json;
-        return 200 '{"status":"ok","build":"{{ build_number }}","services":[{% for s in active_services %}{% if s.expose_to_nginx %}"{{ s.name }}"{% if not loop.last %},{% endif %}{% endif %}{% endfor %}]}';
+        return 200 '{"status":"ok","services":[{% for s in active_services %}{% if s.expose_to_nginx %}"{{ s.name }}"{% if not loop.last %},{% endif %}{% endif %}{% endfor %}]}';
     }
 }
