@@ -66,12 +66,12 @@ services:
     env:
       - .env
 
-  - name: feedbackservice
-    port: 8090
-    expose_to_nginx: true
-    nginx_path: /api/feedback
-    env:
-      - .env
+  # - name: feedbackservice
+  #   port: 8090
+  #   expose_to_nginx: true
+  #   nginx_path: /api/feedback
+  #   env:
+  #     - .env
 
   - name: chatbotservice
     port: 8091
