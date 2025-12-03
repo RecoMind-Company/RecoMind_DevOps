@@ -14,21 +14,22 @@ services:
       - backend
     ports:
       - "{{ service.port }}:{{ expose_Ports }}"
-{% if service.env is defined %}
+    
+    {% if service.env is defined %}
     env_file:
-{% for env_file in service.env %}
+      {% for env_file in service.env %}
       - {{ env_file }}
-{% endfor %}
-{% endif %}
-{% if service.volumes is defined %}
+      {% endfor %}
+    {% endif %}
+    
+    {% if service.volumes is defined %}
     volumes:
-{% for volume in service.volumes %}
+      {% for volume in service.volumes %}
       - {{ volume }}
-{% endfor %}
-{% endif %}
+      {% endfor %}
+    {% endif %}
 
 {% endfor %}
-
 
 
   certbot:
