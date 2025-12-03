@@ -1,12 +1,12 @@
-version: '3. 8'
+version: '3.8'
 
 services:
 {% for service in services %}
-{% if service.alt is defined %}
+  {% if service.alt is defined %}
   {{ service.alt }}:
-{% else %}
+  {% else %}
   {{ service.name }}:
-{% endif %}
+  {% endif %}
     image: {{ docker_registry }}-{{ service.name }}:latest
     container_name: {% if service.alt is defined %}{{ service.alt }}{% else %}{{ service.name }}{% endif %}
     restart: unless-stopped
@@ -14,18 +14,18 @@ services:
       - backend
     ports:
       - "{{ service.port }}:{{ expose_Ports }}"
-{% if service.env is defined %}
+    {% if service.env is defined %}
     env_file:
-{% for env_file in service.env %}
+    {% for env_file in service.env %}
       - {{ env_file }}
-{% endfor %}
-{% endif %}
-{% if service.volumes is defined %}
+    {% endfor %}
+    {% endif %}
+    {% if service.volumes is defined %}
     volumes:
-{% for volume in service.volumes %}
+    {% for volume in service.volumes %}
       - {{ volume }}
-{% endfor %}
-{% endif %}
+    {% endfor %}
+    {% endif %}
 
 {% endfor %}
 
@@ -39,13 +39,13 @@ services:
     networks:
       - webnet
     command: >
-      certonly --webroot 
-      --webroot-path=/var/www/html 
+      certonly --webroot
+      --webroot-path=/var/www/html
       --email support@Recomind.com
-      --agree-tos 
-      --non-interactive 
-      --no-eff-email 
-      --keep-until-expiring 
+      --agree-tos
+      --non-interactive
+      --no-eff-email
+      --keep-until-expiring
       -d {{ domain_name }}
     restart: "no"
 
