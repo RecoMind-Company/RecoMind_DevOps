@@ -4,7 +4,11 @@ services:
 {% for service in services %}
   {{ service.name }}:
     image: {{ docker_registry }}-{{ service.name }}:latest
+    {% if service.alt is defined %}
+    container_name: {{ service.alt }}
+    {% else %}
     container_name: {{ service.name }}
+    {% endif %}
     restart: unless-stopped
     networks:
       - backend

@@ -13,6 +13,7 @@ active_services: "{{ services }}"
 services:
   - name: authenticationservice
     port: 8082
+    alt: auth
     volumes:
       - ./Auth/StaticFiles:/app/RecoMindAuthenticationAPI/StaticFiles/Images
     expose_to_nginx: true
@@ -22,6 +23,7 @@ services:
 
   - name: authenticationservice
     port: 8092
+    alt: account
     volumes:
       - ./Auth/StaticFiles:/app/RecoMindAuthenticationAPI/StaticFiles/Images
     expose_to_nginx: true
