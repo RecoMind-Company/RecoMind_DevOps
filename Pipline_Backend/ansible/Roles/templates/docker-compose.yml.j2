@@ -1,15 +1,14 @@
-version: '3.8'
+version: '3. 8'
 
 services:
 {% for service in services %}
-{{% if service.alt is defined %}}
+{% if service.alt is defined %}
   {{ service.alt }}:
-{{% else %}}
+{% else %}
   {{ service.name }}:
-{{% endif %}}
+{% endif %}
     image: {{ docker_registry }}-{{ service.name }}:latest
-    
-    container_name: {{ service.name }}
+    container_name: {% if service.alt is defined %}{{ service.alt }}{% else %}{{ service.name }}{% endif %}
     restart: unless-stopped
     networks:
       - backend
@@ -30,13 +29,11 @@ services:
 
 {% endfor %}
 
-
-
   certbot:
     image: certbot/certbot
     container_name: certbot
     volumes:
-      - /var/www/certbot:/var/www/html    # MATCH NGINX ROOT
+      - /var/www/certbot:/var/www/html
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
     networks:
@@ -54,6 +51,7 @@ services:
 
   certbot-renew:
     image: certbot/certbot
+    container_name: certbot-renew
     volumes:
       - /var/www/certbot:/var/www/html
       - certbot-etc:/etc/letsencrypt
@@ -61,7 +59,7 @@ services:
     entrypoint: >
       sh -c "trap exit TERM;
       while :; do
-        certbot renew --quiet && systemctl reload nginx;
+        certbot renew --quiet;
         sleep 12h & wait $${!};
       done;"
     networks:
@@ -70,7 +68,9 @@ services:
 
 networks:
   backend:
+    driver: bridge
   webnet:
+    driver: bridge
 
 volumes:
   certbot-etc:
