@@ -9,7 +9,7 @@ services:
     networks:
       - backend
     ports:
-      - "127.0.0.1:{{ service.expose_port }}:{{ service.port }}"
+      - "127.0.0.1:{{ expose_Ports }}:{{ service.port }}"
 {% if service.env is defined %}
     env_file:
 {% for env_file in service.env %}
