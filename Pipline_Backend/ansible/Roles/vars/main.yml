@@ -19,12 +19,21 @@ services:
     nginx_path: /api/Authentication
     env:
       - .env
+
+  - name: authenticationservice
+    port: 8082
+    volumes:
+      - ./Auth/StaticFiles:/app/RecoMindAuthenticationAPI/StaticFiles/Images
+    expose_to_nginx: true
+    nginx_path: /api/Account
+    env:
+      - .env
       
 
   - name: databasesettingservice
     port: 8083
     expose_to_nginx: true
-    nginx_path: /api/databasesetting
+    nginx_path: /api/DbSetting
     env:
       - .env
 
@@ -32,7 +41,7 @@ services:
   - name: subscriptionservice
     port: 8084
     expose_to_nginx: true
-    nginx_path: /api/subscription
+    nginx_path: /api/Subscription
     env:
       - .env
 
@@ -40,21 +49,21 @@ services:
   - name: planeservice
     port: 8085
     expose_to_nginx: true
-    nginx_path: /api/plane
+    nginx_path: /api/Planes
     env:
       - .env
 
   - name: invitationservice
     port: 8086
     expose_to_nginx: true
-    nginx_path: /api/invitation
+    nginx_path: /api/Invitation
     env:
       - .env
 
   - name: companyservice
     port: 8088
     expose_to_nginx: true
-    nginx_path: /api/company
+    nginx_path: /api/Company
     env:
       - .env
 
@@ -62,7 +71,7 @@ services:
   - name: reportservice
     port: 8089
     expose_to_nginx: true
-    nginx_path: /api/report
+    nginx_path: /api/Report
     env:
       - .env
 
@@ -76,7 +85,7 @@ services:
   - name: chatbotservice
     port: 8091
     expose_to_nginx: true
-    nginx_path: /api/chatbot
+    nginx_path: /api/Chatbot
     env:
       - .env
 
@@ -84,6 +93,6 @@ services:
     port: 8093
     
     expose_to_nginx: true
-    nginx_path: /api/team
+    nginx_path: /api/Team
     env:
       - .env
