@@ -3,9 +3,7 @@
 
 
 - name: move docker-compose.yml on remote server
-  copy:
-    src:   docker-compose.yml
+  template:
+    src:  docker-compose.yml.j2
     dest: /home/BackendAdmin/docker-compose.yml
-    owner: BackendAdmin
-    group: BackendAdmin
-    mode: '0644'
+  become: yes

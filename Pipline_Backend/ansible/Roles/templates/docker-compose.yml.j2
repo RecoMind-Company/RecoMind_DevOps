@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+{% for service in services %}
+  {{ service.name }}:
+    image: {{ docker_registry }}-{{ service.name }}:latest
+    container_name: {{ service.name }}
+    restart: unless-stopped
+    networks:
+      - backend
+    ports:
+      - "127.0.0.1:{{ service.expose_port }}:{{ service.port }}"
+{% if service.env is defined %}
+    env_file:
+{% for env_file in service.env %}
+      - {{ env_file }}
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - /var/www/certbot:/var/www/html    # MATCH NGINX ROOT
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    networks:
+      - webnet
+    command: >
+      certonly --webroot 
+      --webroot-path=/var/www/html 
+      --email support@Recomind.com
+      --agree-tos 
+      --non-interactive 
+      --no-eff-email 
+      --keep-until-expiring 
+      -d {{ domain_name }}
+    restart: "no"
+
+  certbot-renew:
+    image: certbot/certbot
+    volumes:
+      - /var/www/certbot:/var/www/html
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    entrypoint: >
+      sh -c "trap exit TERM;
+      while :; do
+        certbot renew --quiet && systemctl reload nginx;
+        sleep 12h & wait $${!};
+      done;"
+    networks:
+      - webnet
+    restart: unless-stopped
+
+networks:
+  backend:
+  webnet:
+
+volumes:
+  certbot-etc:
+  certbot-var:

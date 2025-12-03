@@ -2,9 +2,9 @@
 # tasks file for Roles
 
 
-# - name: Setup Nginx on VM
-#   import_tasks: templatesTasks/nginx-confg.yml
+- name: Setup Nginx on VM
+  import_tasks: templatesTasks/nginx-confg.yml
 
-# # move docker compose file
-# - name: Move Docker Compose File
-#   import_tasks: templatesTasks/moveFileDockerCompos.yml
+# move docker compose file
+- name: Move Docker Compose File
+  import_tasks: templatesTasks/FileDockerCompos.yml

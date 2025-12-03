@@ -1,2 +1,51 @@
 ---
 # vars file for Roles
+docker_registry: redasaad1234/backend
+
+expose_Ports: 8000
+
+domain_name: api.recomind.site
+
+
+services:
+  - name: authenticationservice
+    port: 8082
+    expose_to_nginx: true
+    nginx_path: /api/auth
+    env:
+      - .env
+      
+
+  - name: databasesettingservice
+    port: 8083
+    expose_to_nginx: true
+    nginx_path: /api/users
+    env:
+      - .env
+
+
+  - name: subscriptionservice
+    port: 8084
+    expose_to_nginx: true
+    nginx_path: /api/orders
+    env:
+      - .env
+
+
+  - name: planeservice
+    port: 8085
+    expose_to_nginx: false
+    env:
+      - .env
+
+  - name: invitationservice
+    port: 8086
+    expose_to_nginx: false
+    env:
+      - .env
+
+  - name: companyservice
+    port: 8087
+    expose_to_nginx: false
+    env:
+      - .env

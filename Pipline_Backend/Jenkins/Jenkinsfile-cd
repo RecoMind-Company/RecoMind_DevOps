@@ -43,30 +43,10 @@ pipeline{
 
             }
         }
+        
 
-
-        stage('Prepare Ansible Files') {
-            steps {
-                sh '''
-                    rm Pipline_Backend/ansible/Roles/files || true
-
-                    mkdir -p Pipline_Backend/ansible/Roles/files/
-
-                    
-                    cp Pipline_Backend/docker-compose.yml \
-                    Pipline_Backend/ansible/Roles/files/docker-compose.yml
-                    
-                    echo "=== Verification ==="
-                    ls -la Pipline_Backend/ansible/Roles/files/
-                    echo "\n=== File content preview ==="
-                    head -20 Pipline_Backend/ansible/Roles/files/docker-compose.yml
-                '''
-            }
-        }
+        
     
-
-
-
 
         stage('Add Ip or Domain to Ansible Defaults') {
             steps {
