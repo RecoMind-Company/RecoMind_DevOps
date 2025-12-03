@@ -13,6 +13,8 @@ active_services: "{{ services }}"
 services:
   - name: authenticationservice
     port: 8082
+    volumes:
+      - ./Auth/StaticFiles:/app/RecoMindAuthenticationAPI/StaticFiles/Images
     expose_to_nginx: true
     nginx_path: /api/auth
     env:
@@ -50,8 +52,30 @@ services:
       - .env
 
   - name: companyservice
-    port: 8087
+    port: 8088
     expose_to_nginx: true
     nginx_path: /api/company
+    env:
+      - .env
+
+
+  - name: reportservice
+    port: 8089
+    expose_to_nginx: true
+    nginx_path: /api/report
+    env:
+      - .env
+
+  - name: feedbackservice
+    port: 8090
+    expose_to_nginx: true
+    nginx_path: /api/feedback
+    env:
+      - .env
+
+  - name: chatbotservice
+    port: 8091
+    expose_to_nginx: true
+    nginx_path: /api/chatbot
     env:
       - .env
