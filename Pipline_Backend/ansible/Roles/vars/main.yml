@@ -12,9 +12,9 @@ active_services: "{{ services }}"
 
 services:
   - name: authenticationservice
-    port: 8001
+    port: 8011
     allow_gRPC: true
-    gRPC: 5001
+    gRPC: 5011
     alt: authenticationservice
     volumes:
       - ./Auth/StaticFiles:/app/RecoMindAuthenticationAPI/StaticFiles/Images
