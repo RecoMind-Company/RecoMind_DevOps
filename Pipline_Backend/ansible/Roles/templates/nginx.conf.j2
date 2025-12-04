@@ -50,7 +50,7 @@ server {
 {% if service.expose_to_nginx %}
     # {{ service.name }} service
     location /{{ service.nginx_path }}/ {
-        proxy_pass http://{{ service.name }}_backend_{{ service.port }}/;
+        proxy_pass http://{{ service.name }}_backend_{{ service.port }}/{{ service.nginx_path }}/;
         proxy_http_version 1.1;
 
         proxy_set_header Host $host;
@@ -65,8 +65,12 @@ server {
         proxy_request_buffering off;
 
         sub_filter_once off;
-        sub_filter 'href="/swagger' 'href="{{ service.nginx_path }}/swagger/';
-        sub_filter 'src="/swagger' 'src="{{ service.nginx_path }}/swagger/';
+
+        sub_filter '"./swagger' '"/{{ service.nginx_path }}/swagger';
+        sub_filter "'./swagger" "'/{{ service.nginx_path }}/swagger";
+
+        sub_filter 'href="/swagger' 'href="/{{ service.nginx_path }}/swagger/';
+        sub_filter 'src="/swagger' 'src="/{{ service.nginx_path }}/swagger/';
 
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
