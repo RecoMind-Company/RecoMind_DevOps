@@ -79,7 +79,7 @@ services:
     allow_gRPC: true
     gRPC: 5007
     expose_to_nginx: true
-    nginx_path: /api/Company
+    nginx_path: /api/Companies
     env:
       - .env
 
