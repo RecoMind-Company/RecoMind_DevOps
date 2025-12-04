@@ -18,7 +18,7 @@ services:
       - backend
     ports:
       - "{{ service.port }}:{{ expose_Ports }}"
-{% if service.allow_gRPC is defined and service.allow-gRPC %}
+{% if service.allow_gRPC is defined and service.allow_gRPC %}
       - "{{ service.gRPC }}:{{ service.gRPC }}"
 {% endif %}
 {% if service.env is defined %}
