@@ -70,7 +70,7 @@ services:
     allow_gRPC: true
     gRPC: 5006
     expose_to_nginx: true
-    nginx_path: /api/invitation
+    nginx_path: /api/Invitation
     env:
       - .env
 
