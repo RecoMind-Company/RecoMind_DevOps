@@ -54,7 +54,7 @@ server {
     client_max_body_size 50M;
 
 {% for service in active_services %}
-{% if service. expose_to_nginx %}
+{% if service.expose_to_nginx %}
     # {{ service.name }} service
     location {{ service.nginx_path }}/ {
         # ✅ FIX: Remove the trailing path from proxy_pass
