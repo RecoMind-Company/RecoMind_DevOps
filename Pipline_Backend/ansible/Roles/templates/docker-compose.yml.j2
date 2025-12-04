@@ -35,8 +35,8 @@ services:
 {% endif %}
 {% if service.allow_gRPC is defined and service.allow_gRPC %}
     environment:
-      - Kestrel__Endpoints__Http__Port={{ service.port }}
-      - Kestrel__Endpoints__Grpc__Port={{ service.gRPC }}
+      - HTTP_PORT={{ service.port }}
+      - GRPC_PORT={{ service.gRPC }}
 {% endif %}
 {% endfor %}
 
