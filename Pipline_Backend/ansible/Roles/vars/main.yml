@@ -12,7 +12,9 @@ active_services: "{{ services }}"
 
 services:
   - name: authenticationservice
-    port: 8082
+    port: 8001
+    allow-gRPC: true
+    gRPC: 5001
     alt: authenticationservice
     volumes:
       - ./Auth/StaticFiles:/app/RecoMindAuthenticationAPI/StaticFiles/Images
@@ -22,7 +24,9 @@ services:
       - .env
 
   - name: authenticationservice
-    port: 8092
+    port: 8002
+    allow-gRPC: true
+    gRPC: 5002
     alt: accountservice
     volumes:
       - ./Auth/StaticFiles:/app/RecoMindAuthenticationAPI/StaticFiles/Images
@@ -33,7 +37,9 @@ services:
       
 
   - name: databasesettingservice
-    port: 8083
+    port: 8003
+    allow-gRPC: true
+    gRPC: 5003
     expose_to_nginx: true
     nginx_path: /api/DbSetting
     env:
@@ -41,7 +47,9 @@ services:
 
 
   - name: subscriptionservice
-    port: 8084
+    port: 8004
+    allow-gRPC: true
+    gRPC: 5004
     expose_to_nginx: true
     nginx_path: /api/Subscription
     env:
@@ -49,21 +57,27 @@ services:
 
 
   - name: planeservice
-    port: 8085
+    port: 8005
+    allow-gRPC: true
+    gRPC: 5005
     expose_to_nginx: true
     nginx_path: /api/Planes
     env:
       - .env
 
   - name: invitationservice
-    port: 8086
+    port: 8006
+    allow-gRPC: true
+    gRPC: 5006
     expose_to_nginx: true
     nginx_path: /api/Invitation
     env:
       - .env
 
   - name: companyservice
-    port: 8088
+    port: 8007
+    allow-gRPC: true
+    gRPC: 5007
     expose_to_nginx: true
     nginx_path: /api/Company
     env:
@@ -71,7 +85,9 @@ services:
 
 
   - name: reportservice
-    port: 8089
+    port: 8008
+    allow-gRPC: true
+    gRPC: 5008
     expose_to_nginx: true
     nginx_path: /api/Report
     env:
@@ -85,15 +101,18 @@ services:
   #     - .env
 
   - name: chatbotservice
-    port: 8091
+    port: 8009
+    allow-gRPC: true
+    gRPC: 5009
     expose_to_nginx: true
     nginx_path: /api/Chatbot
     env:
       - .env
 
   - name: teamservice
-    port: 8093
-    
+    port: 8010
+    allow-gRPC: true
+    gRPC: 5010
     expose_to_nginx: true
     nginx_path: /api/Team
     env:

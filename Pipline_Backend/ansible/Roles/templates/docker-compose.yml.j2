@@ -18,6 +18,9 @@ services:
       - backend
     ports:
       - "{{ service.port }}:{{ expose_Ports }}"
+{% if service.allow-gRPC is defined and service.allow-gRPC %}
+      - "{{ service.gRPC }}:{{ service.gRPC }}"
+{% endif %}
 {% if service.env is defined %}
     env_file:
 {% for env_file in service.env %}
@@ -30,6 +33,11 @@ services:
       - {{ volume }}
 {% endfor %}
 {% endif %}
+    environment:
+      - Kestrel__Endpoints__Http__Port={{ service.port }}
+      - Kestrel__Endpoints__Http__Protocols=Http1
+      - Kestrel__Endpoints__Grpc__Port={{ service.gRPC }}
+      - Kestrel__Endpoints__Grpc__Protocols=Http2
 
 {% endfor %}
 
