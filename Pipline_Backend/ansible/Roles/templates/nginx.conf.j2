@@ -58,8 +58,11 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+        # ✅ Fix: إزالة upgrade header (مش محتاجة لـ HTTP API)
+        proxy_set_header Connection "";
+
+        proxy_buffering off;
+        proxy_request_buffering off;
 
         sub_filter_once off;
         sub_filter 'href="/swagger' 'href="{{ service.nginx_path }}/swagger';
