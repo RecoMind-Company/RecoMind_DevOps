@@ -13,7 +13,7 @@ active_services: "{{ services }}"
 services:
   - name: authenticationservice
     port: 8001
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5001
     alt: authenticationservice
     volumes:
@@ -25,7 +25,7 @@ services:
 
   - name: authenticationservice
     port: 8002
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5002
     alt: accountservice
     volumes:
@@ -38,7 +38,7 @@ services:
 
   - name: databasesettingservice
     port: 8003
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5003
     expose_to_nginx: true
     nginx_path: /api/DbSetting
@@ -48,7 +48,7 @@ services:
 
   - name: subscriptionservice
     port: 8004
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5004
     expose_to_nginx: true
     nginx_path: /api/Subscription
@@ -58,7 +58,7 @@ services:
 
   - name: planeservice
     port: 8005
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5005
     expose_to_nginx: true
     nginx_path: /api/Planes
@@ -67,7 +67,7 @@ services:
 
   - name: invitationservice
     port: 8006
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5006
     expose_to_nginx: true
     nginx_path: /api/Invitation
@@ -76,7 +76,7 @@ services:
 
   - name: companyservice
     port: 8007
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5007
     expose_to_nginx: true
     nginx_path: /api/Company
@@ -86,7 +86,7 @@ services:
 
   - name: reportservice
     port: 8008
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5008
     expose_to_nginx: true
     nginx_path: /api/Report
@@ -102,7 +102,7 @@ services:
 
   - name: chatbotservice
     port: 8009
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5009
     expose_to_nginx: true
     nginx_path: /api/Chatbot
@@ -111,7 +111,7 @@ services:
 
   - name: teamservice
     port: 8010
-    allow-gRPC: true
+    allow_gRPC: true
     gRPC: 5010
     expose_to_nginx: true
     nginx_path: /api/Team

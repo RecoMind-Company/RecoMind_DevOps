@@ -33,12 +33,13 @@ services:
       - {{ volume }}
 {% endfor %}
 {% endif %}
+{% if service.allow-gRPC is defined and service.allow-gRPC %}
     environment:
       - Kestrel__Endpoints__Http__Port={{ service.port }}
       - Kestrel__Endpoints__Http__Protocols=Http1
       - Kestrel__Endpoints__Grpc__Port={{ service.gRPC }}
       - Kestrel__Endpoints__Grpc__Protocols=Http2
-
+{% endif %}
 {% endfor %}
 
   certbot:
