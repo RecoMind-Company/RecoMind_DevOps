@@ -90,7 +90,7 @@ pipeline {
                     }
                 }
 
-                stage('Build reporting_system Image') {
+                stage('Build copilot Image') {
                     steps {
                         dir('src/copilot') {
                             sh "docker build -t ${IMAGE_NAME}-copilot:${TAG} ."
