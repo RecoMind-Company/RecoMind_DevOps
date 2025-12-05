@@ -73,6 +73,36 @@ services:
       - redis
       - reporting_system_api
 
+  Copilot_service:
+    image: hossamtaha9/recomind-ai-vector-copilot:latest
+    container_name: recomind-copilot
+    env_file:
+      - .env  # Load all secrets from .env file
+    ports:
+      - "8002:8002"
+    depends_on:
+      - redis
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE=${BASE_URL}
+      - OPENAI_MODEL_NAME=${crewai_LLM_MODEL}
+
+
+  Copilot_worker:
+    image: hossamtaha9/recomind-ai-vector-copilot:latest
+    container_name: recomind-copilot-worker
+    command:  celery -A celery_worker.celery_app worker --loglevel=info -P gevent -Q copilot_queue
+    env_file:
+      - .env  # The worker also needs all the secrets
+    depends_on:
+      - redis
+      - Copilot_service
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE=${BASE_URL}
+      - OPENAI_MODEL_NAME=${crewai_LLM_MODEL}
+
+
 volumes:
   redis_data:
     
