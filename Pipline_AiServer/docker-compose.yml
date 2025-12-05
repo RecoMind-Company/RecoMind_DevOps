@@ -16,7 +16,7 @@ services:
     image: hossamtaha9/recomind-ai-vector-data_embedding:latest
     container_name: recomind-ingestion-api
     env_file:
-      - .env  # Load all secrets from .env file
+      - .env_report  # Load all secrets from .env file
     ports:
       - "8000:8000"
     depends_on:
@@ -31,7 +31,7 @@ services:
     container_name: recomind-ingestion-worker
     command: celery -A celery_worker.celery_app worker --loglevel=info -P gevent
     env_file:
-      - .env  # The worker also needs all the secrets
+      - .env_report  # The worker also needs all the secrets
     depends_on:
       - redis
     dns:
@@ -43,7 +43,7 @@ services:
     image: hossamtaha9/recomind-ai-vector-reporting_system:latest
     container_name: recomind-reporting-system
     env_file:
-      - .env  # Load all secrets from .env file
+      - .env_report  # Load all secrets from .env file
     ports:
       - "8001:8001"
     environment:
@@ -63,7 +63,7 @@ services:
     container_name: recomind-reporting-system-worker
     command: celery -A celery_worker.celery_app worker --loglevel=info -P gevent
     env_file:
-      - .env  # The worker also needs all the secrets
+      - .env_report  # The worker also needs all the secrets
 
     environment:
       - OPENAI_API_KEY=${OPENROUTER_API_KEY}
@@ -77,7 +77,7 @@ services:
     image: hossamtaha9/recomind-ai-vector-copilot:latest
     container_name: recomind-copilot
     env_file:
-      - .env  # Load all secrets from .env file
+      - .env_chatbot  # Load all secrets from .env file
     ports:
       - "8002:8002"
     depends_on:
@@ -93,7 +93,7 @@ services:
     container_name: recomind-copilot-worker
     command:  celery -A celery_worker.celery_app worker --loglevel=info -P gevent -Q copilot_queue
     env_file:
-      - .env  # The worker also needs all the secrets
+      - .env_chatbot  # The worker also needs all the secrets
     depends_on:
       - redis
       - Copilot_service
