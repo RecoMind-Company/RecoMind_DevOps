@@ -37,7 +37,7 @@ services:
     environment:
       - HTTP_PORT={{ service.port }}
       - GRPC_PORT={{ service.gRPC }}
-      - ASPNETCORE_URLS=http://+:{{ service.port }}
+      - + ASPNETCORE_URLS=http://+:{{ service.port }};http://+:{{ service.gRPC }}
       - ASPNETCORE_HTTP_PORTS={{ service.port }}
 {% endif %}
 {% endfor %}
