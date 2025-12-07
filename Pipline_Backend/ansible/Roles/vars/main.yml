@@ -17,7 +17,7 @@ services:
     gRPC: 5011
     alt: authenticationservice
     volumes:
-      - /var/www/auth/images:/app/RecoMindAuthenticationAPI/StaticFiles/Images
+      - /var/www/auth/images:/app/StaticFiles/Images
     expose_to_nginx: true
     nginx_path: /api/Authentication
     env:
