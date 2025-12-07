@@ -10,22 +10,32 @@ pipeline {
 
     stages {
 
-
-        stage('Cleanup Git Refs') {
-        steps {
-            script {
-                withCredentials([usernamePassword(credentialsId: 'Git_hub', 
-                                                usernameVariable: 'GIT_USERNAME', 
-                                                passwordVariable: 'GIT_PASSWORD')]) {
-                    sh '''
-                        cd /var/lib/jenkins/workspace/Pipline-Ai-ci/
-                        git config credential.helper store
-                        git remote prune origin
-                    '''
-                }
+        stage('Clean Conflicting Refs') {
+            steps {
+                sh '''
+                    #!/bin/bash
+                    set -e
+                    cd /var/lib/jenkins/workspace/Pipline-Ai-ci/
+                    
+                    # Remove the conflicting reference
+                    if [ -d . git/refs/remotes/origin/feature/chatbot ]; then
+                        rm -rf .git/refs/remotes/origin/feature/chatbot
+                        echo "✓ Removed conflicting chatbot ref"
+                    else
+                        echo "✓ No conflicting ref found"
+                    fi
+                    
+                    # Also clean packed-refs if needed
+                    if [ -f . git/packed-refs ]; then
+                        sed -i '/refs\\/remotes\\/origin\\/feature\\/chatbot$/d' .git/packed-refs
+                        echo "✓ Cleaned packed-refs"
+                    fi
+                '''
             }
         }
-    }
+
+
+        
 
         stage('Checkout Source Code') {
             steps {
