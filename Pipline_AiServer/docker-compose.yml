@@ -82,10 +82,10 @@ services:
       - "8002:8002"
     depends_on:
       - redis
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_API_BASE=${BASE_URL}
-      - OPENAI_MODEL_NAME=${crewai_LLM_MODEL}
+    # environment:
+    #   - OPENAI_API_KEY=${OPENAI_API_KEY}
+    #   - OPENAI_API_BASE=${BASE_URL}
+    #   - OPENAI_MODEL_NAME=${crewai_LLM_MODEL}
 
 
   Copilot_worker:
@@ -97,10 +97,10 @@ services:
     depends_on:
       - redis
       - Copilot_service
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_API_BASE=${BASE_URL}
-      - OPENAI_MODEL_NAME=${crewai_LLM_MODEL}
+    # environment:
+    #   - OPENAI_API_KEY=${OPENAI_API_KEY}
+    #   - OPENAI_API_BASE=${BASE_URL}
+    #   - OPENAI_MODEL_NAME=${crewai_LLM_MODEL}
 
 
 volumes:
