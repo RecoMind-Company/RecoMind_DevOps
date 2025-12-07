@@ -16,7 +16,7 @@ services:
     image: hossamtaha9/recomind-ai-vector-data_embedding:latest
     container_name: recomind-ingestion-api
     env_file:
-      - .env_report  # Load all secrets from .env file
+      - .env_data_embedding  # Load all secrets from .env file
     ports:
       - "8000:8000"
     depends_on:
@@ -31,7 +31,7 @@ services:
     container_name: recomind-ingestion-worker
     command: celery -A celery_worker.celery_app worker --loglevel=info -P gevent
     env_file:
-      - .env_report  # The worker also needs all the secrets
+      - .env_data_embedding  # The worker also needs all the secrets
     depends_on:
       - redis
     dns:
