@@ -12,6 +12,10 @@ pipeline {
 
         stage('Checkout Source Code') {
             steps {
+                sh """
+                    cd /var/lib/jenkins/workspace/Pipline-Ai-ci/
+                    git remote prune origin
+                """
                 // checkout للكود من repo الرئيسي
                 git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-AI.git', credentialsId: 'Git_hub'
             }
