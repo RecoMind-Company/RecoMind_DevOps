@@ -29,7 +29,7 @@ services:
   data_empedding_worker:
     image: hossamtaha9/recomind-ai-vector-data_embedding:latest
     container_name: recomind-ingestion-worker
-    command: celery -A tasks.celery_app.celery_app worker --loglevel=info -P gevent 
+    command: celery -A tasks.celery_app.celery_app worker --loglevel=info -P gevent -Q embedding_queue
     env_file:
       - .env_data_embedding  # The worker also needs all the secrets
     depends_on:
