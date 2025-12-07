@@ -10,6 +10,23 @@ pipeline {
 
     stages {
 
+
+        stage('Cleanup Git Refs') {
+        steps {
+            script {
+                withCredentials([usernamePassword(credentialsId: 'Git_hub', 
+                                                usernameVariable: 'GIT_USERNAME', 
+                                                passwordVariable: 'GIT_PASSWORD')]) {
+                    sh '''
+                        cd /var/lib/jenkins/workspace/Pipline-Ai-ci/
+                        git config credential.helper store
+                        git remote prune origin
+                    '''
+                }
+            }
+        }
+    }
+
         stage('Checkout Source Code') {
             steps {
                 sh """
