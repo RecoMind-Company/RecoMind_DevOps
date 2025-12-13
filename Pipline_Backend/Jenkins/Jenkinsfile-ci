@@ -83,7 +83,7 @@ pipeline{
                     for (service in services) {
                         def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
                         sh """
-                            docker build -t ${imageTag} ${SERVICES_DIR}/${service}
+                            docker build --no-cache -t ${imageTag} ${SERVICES_DIR}/${service}
                         """
                         echo "🛠️ Built image: ${imageTag}"
                     }
