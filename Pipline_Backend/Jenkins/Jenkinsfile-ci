@@ -13,7 +13,7 @@ pipeline{
         
         stage("checkout Source code") {
             steps {
-                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub_credentials'
+                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
             }
         }
 
