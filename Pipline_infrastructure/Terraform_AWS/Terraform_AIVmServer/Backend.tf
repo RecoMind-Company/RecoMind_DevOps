@@ -1,10 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "recomind-devops-terraform-state-461703429082"
-    key            = "ai-server/terraform.tfstate"
-    region         = "us-east-1"
-    encrypt        = true
-    dynamodb_table = "terraform-state-lock"
+    bucket  = "recomind-devops-terraform-state-461703429082"
+    key     = "ai-server/terraform.tfstate"
+    region  = "eu-central-1"
+    encrypt = true
   }
   
   required_providers {
