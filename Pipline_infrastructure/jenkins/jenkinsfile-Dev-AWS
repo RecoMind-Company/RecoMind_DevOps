@@ -26,15 +26,15 @@ pipeline {
     }
 
     environment { 
-        ARM_aws_access_key    = credentials('aws_access_key')
-        ARM_aws_secret_key   = credentials('aws_secret_key')
-        
 
+        AWS_ACCESS_KEY_ID     = credentials('aws_access_key_ID') 
+        AWS_SECRET_ACCESS_KEY = credentials('aws_secret_key_ID')
+        AWS_DEFAULT_REGION    = "us-east-1"
+        
         TF_VAR_ssh_public_key   = credentials('SSH_PUBLIC_KEY')
         TF_VAR_aws_secret_key   = credentials('aws_secret_key')
         TF_VAR_aws_access_key    = credentials('aws_access_key')
         
-
     }
 
     stages {
