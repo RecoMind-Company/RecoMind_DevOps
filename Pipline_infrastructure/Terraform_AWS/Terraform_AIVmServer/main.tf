@@ -32,7 +32,7 @@ resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[0]
+  availability_zone       = "${var.aws_region}a"  # Using hardcoded zone suffix
 
   tags = {
     Name = "AI-Public-Subnet"
@@ -110,11 +110,6 @@ resource "aws_security_group" "ai_sg" {
     Name = "AI-Server-SG"
     Project = var.project_name
   }
-}
-
-# Data source for availability zones
-data "aws_availability_zones" "available" {
-  state = "available"
 }
 
 # Data source for latest Ubuntu 20.04 AMI
