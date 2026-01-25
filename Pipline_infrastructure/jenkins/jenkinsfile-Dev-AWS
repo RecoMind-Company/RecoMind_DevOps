@@ -97,7 +97,7 @@ pipeline {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
                 dir("Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
-                    sh 'terraform destroy -auto-approve '
+                    sh 'terraform apply -auto-approve '
                 }
             }
         }
