@@ -26,16 +26,11 @@ pipeline {
     }
 
     environment { 
-        ARM_CLIENT_ID       = credentials('CLIENT_ID')
-        ARM_CLIENT_SECRET   = credentials('CLIENT_SECRET')
-        ARM_SUBSCRIPTION_ID = credentials('SUBSCRIPTION_ID')
-        ARM_TENANT_ID       = credentials('TENANT_ID')
+        ARM_aws_access_key    = credentials('aws_access_key')
+        ARM_aws_secret_key   = credentials('aws_secret_key')
+        
 
         TF_VAR_ssh_public_key   = credentials('SSH_PUBLIC_KEY')
-        TF_VAR_subscription_id  = credentials('SUBSCRIPTION_ID')
-        TF_VAR_tenant_id        = credentials('TENANT_ID')
-        TF_VAR_client_id        = credentials('CLIENT_ID')
-        TF_VAR_client_secret    = credentials('CLIENT_SECRET')
         TF_VAR_aws_secret_key   = credentials('aws_secret_key')
         TF_VAR_aws_access_key    = credentials('aws_access_key')
         
@@ -47,7 +42,7 @@ pipeline {
         stage('Terraform Init') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+                dir("Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'rm -rf .terraform .terraform.lock.hcl'
                     sh 'terraform init -reconfigure'
                 }
@@ -57,7 +52,7 @@ pipeline {
         stage('Terraform Validate') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+                dir("Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'terraform validate'
                 }
             }
@@ -66,7 +61,7 @@ pipeline {
         stage('ssh-keyscan') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+                dir("Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     withCredentials([
                         sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
                     ]) {
@@ -88,7 +83,7 @@ pipeline {
         stage('Terraform Plan') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+                dir("Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'terraform plan -out=tfplan'
                 }
             }
@@ -97,7 +92,7 @@ pipeline {
         stage('Terraform Apply') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+                dir("Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     sh 'terraform destroy -auto-approve '
                 }
             }
@@ -106,7 +101,7 @@ pipeline {
         stage('Get Public IP and Server username') {
             when { expression { return !params.SKIP_TERRAFORM } }
             steps {
-                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+                dir("Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
                     script {
                         
                         env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
@@ -124,13 +119,13 @@ pipeline {
         stage('Archive Outputs') {
             when { expression { return !params.MANUAL_PUBLIC_IP } }
             steps {
-                archiveArtifacts artifacts: "Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/*", fingerprint: true
+                archiveArtifacts artifacts: "Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/*", fingerprint: true
             }
         }
 
         stage('Detect IP & Save Global') {
             steps {
-                dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}"){
+                dir("Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}"){
                     script {
                         env.ipToUse = env.PUBLIC_IP ?: (params.MANUAL_PUBLIC_IP ?: (fileExists('outputs/server_ip.txt') ? sh(script: "cat outputs/server_ip.txt", returnStdout: true).trim() : ''))
                         if (!env.ipToUse) {
@@ -148,7 +143,7 @@ pipeline {
         stage('Detect Server Name & Save Global ') {
             steps {
                 script {
-                    env.server_Name = env.SERVER_NAME ?: (params.MANUAL_SERVER_NAME ?: (fileExists("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt") ? sh(script: "cat Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt", returnStdout: true).trim() : ''))
+                    env.server_Name = env.SERVER_NAME ?: (params.MANUAL_SERVER_NAME ?: (fileExists("Pipline_infrastructure/Terraform_AWS/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt") ? sh(script: "cat Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}/outputs/server_Name.txt", returnStdout: true).trim() : ''))
                     if (!env.server_Name) {
                         error "No SERVER_NAME available! Set the pipeline parameter 'MANUAL_SERVER_NAME' for manual runs or ensure Terraform produced 'vm_admin_username'."
                     }
