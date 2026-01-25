@@ -27,7 +27,7 @@ pipeline {
 
     environment { 
 
-        environment { 
+         
 
     // AWS Credentials for Terraform Backend & Provider
     AWS_ACCESS_KEY_ID     = credentials('aws_access_key')     // 🔥 شيل _ID
@@ -38,7 +38,7 @@ pipeline {
     TF_VAR_ssh_public_key = credentials('SSH_PUBLIC_KEY')
     TF_VAR_aws_secret_key = credentials('aws_secret_key')
     TF_VAR_aws_access_key = credentials('aws_access_key')
-}
+
     }
 
     stages {
