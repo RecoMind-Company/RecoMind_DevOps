@@ -13,7 +13,7 @@ variable "client_secret" {}
 
 
 variable "resource_group_name" {
-  default = "aks-rg-AI"
+  default = "aks-rg-Recomind"
 }
 
 variable "location" {
@@ -21,15 +21,15 @@ variable "location" {
 }
 
 variable "cluster_name" {
-  default = "AI-aks"
+  default = "Recomind-aks"
 }
 
 variable "dns_prefix" {
-  default = "AI-aks"
+  default = "Recomind-aks"
 }
 
 variable "vm_size" {
-  default = "Standard_B2s"
+  default = "Standard_D2as_v5"
 }
 
 variable "min_count" {
@@ -37,14 +37,14 @@ variable "min_count" {
 }
 
 variable "max_count" {
-  default = 3
+  default = 2
 }
 
 variable "environment" {
-  default = "dev"
+  default = "prod"
 }
 
 # extra pool
 variable "extra_vm_size" {
-  default = "Standard_D4s_v3"
+  default = "Standard_D4as_v5"
 }
