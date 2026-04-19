@@ -22,7 +22,7 @@ pipeline {
         stage('Terraform Init') {
            
             steps {
-                dir("Pipline_infrastructure/Terraform") {
+                dir("Pipeline_infrastructure/Infrastructure_recomind/Terraform") {
                     sh 'rm -rf .terraform .terraform.lock.hcl'
                     sh 'terraform init -reconfigure'
                 }
@@ -31,7 +31,7 @@ pipeline {
 
         stage('Terraform Validate') {
             steps {
-                dir("Pipline_infrastructure/Terraform") {
+                dir("Pipeline_infrastructure/Infrastructure_recomind/Terraform") {
                     sh 'terraform validate'
                 }
             }
@@ -40,7 +40,7 @@ pipeline {
 
         stage('Terraform Plan') {
             steps {
-                dir("Pipline_infrastructure/Terraform") {
+                dir("Pipeline_infrastructure/Infrastructure_recomind/Terraform") {
                     sh 'terraform plan -out=tfplan'
                 }
             }
@@ -48,7 +48,7 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                dir("Pipline_infrastructure/Terraform") {
+                dir("Pipeline_infrastructure/Infrastructure_recomind/Terraform") {
                     sh 'terraform apply -auto-approve '
                 }
             }
