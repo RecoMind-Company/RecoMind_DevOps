@@ -1,0 +1,21 @@
+---
+# tasks file for Roles
+
+
+- name: Install Python 3.10 and set as default
+  import_tasks: templatesTasks/install-Python.yml
+
+- name: Install containerd
+  import_tasks: templatesTasks/containerd.yml
+
+- name: Install Kubernetes components
+  import_tasks: templatesTasks/K8s.yml
+
+- name: Download cert-manager manifest
+  import_tasks: templatesTasks/cert-manager.yml
+
+- name: Download ingress controller manifest
+  import_tasks: templatesTasks/ingress-controller.yml
+
+- name: Install Helm
+  import_tasks: templatesTasks/Helm.yml

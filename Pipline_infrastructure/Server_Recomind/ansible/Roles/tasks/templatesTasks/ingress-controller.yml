@@ -1,0 +1,6 @@
+---
+- name: Download ingress-nginx controller manifest
+  get_url:
+    url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+    dest: /tmp/ingress-nginx-controller.yaml
+    mode: '0644'

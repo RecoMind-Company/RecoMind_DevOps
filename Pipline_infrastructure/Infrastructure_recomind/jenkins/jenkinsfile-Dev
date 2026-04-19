@@ -1,0 +1,291 @@
+
+pipeline {
+    agent any
+
+    environment { 
+        ARM_CLIENT_ID       = credentials('CLIENT_ID')
+        ARM_CLIENT_SECRET   = credentials('CLIENT_SECRET')
+        ARM_SUBSCRIPTION_ID = credentials('SUBSCRIPTION_ID')
+        ARM_TENANT_ID       = credentials('TENANT_ID')
+
+        // TF_VAR_ssh_public_key   = credentials('SSH_PUBLIC_KEY')
+        TF_VAR_subscription_id  = credentials('SUBSCRIPTION_ID')
+        TF_VAR_tenant_id        = credentials('TENANT_ID')
+        TF_VAR_client_id        = credentials('CLIENT_ID')
+        TF_VAR_client_secret    = credentials('CLIENT_SECRET')
+
+        
+
+    }
+
+    stages {
+        stage('Terraform Init') {
+           
+            steps {
+                dir("Pipline_infrastructure/Terraform") {
+                    sh 'rm -rf .terraform .terraform.lock.hcl'
+                    sh 'terraform init -reconfigure'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir("Pipline_infrastructure/Terraform") {
+                    sh 'terraform validate'
+                }
+            }
+        }
+
+
+        stage('Terraform Plan') {
+            steps {
+                dir("Pipline_infrastructure/Terraform") {
+                    sh 'terraform plan -out=tfplan'
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir("Pipline_infrastructure/Terraform") {
+                    sh 'terraform apply -auto-approve '
+                }
+            }
+        }
+
+
+
+
+        
+    }
+}
+
+
+
+// pipeline {
+//     agent any
+
+//     parameters {
+//         booleanParam(
+//             name: 'SKIP_TERRAFORM', 
+//             defaultValue: false, 
+//             description: 'Provide IP to run Ansible only'
+//         )
+
+//         booleanParam(
+//             name: 'SKIP_ANSIBLE', 
+//             defaultValue: false, 
+//             description: 'Skip Ansible and run Terraform only'
+//         )
+
+//         string(
+//             name: 'Terraform_DIR', 
+//             defaultValue: '', 
+//             description: 'Directory for Terraform files (if empty, uses default path)'
+//         )
+//     }
+
+//     environment { 
+//         ARM_CLIENT_ID       = credentials('CLIENT_ID')
+//         ARM_CLIENT_SECRET   = credentials('CLIENT_SECRET')
+//         ARM_SUBSCRIPTION_ID = credentials('SUBSCRIPTION_ID')
+//         ARM_TENANT_ID       = credentials('TENANT_ID')
+
+//         TF_VAR_ssh_public_key   = credentials('SSH_PUBLIC_KEY')
+//         TF_VAR_subscription_id  = credentials('SUBSCRIPTION_ID')
+//         TF_VAR_tenant_id        = credentials('TENANT_ID')
+//         TF_VAR_client_id        = credentials('CLIENT_ID')
+//         TF_VAR_client_secret    = credentials('CLIENT_SECRET')
+        
+//         // 🔥 إضافة shared output directory
+//         SHARED_OUTPUTS = "${WORKSPACE}/shared_outputs"
+//     }
+
+//     stages {
+
+//         stage('Terraform Init') {
+//             when { expression { return !params. SKIP_TERRAFORM } }
+//             steps {
+//                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+//                     sh 'rm -rf .terraform .terraform.lock.hcl'
+//                     sh 'terraform init -reconfigure'
+//                 }
+//             }
+//         }
+
+//         stage('Terraform Validate') {
+//             when { expression { return !params. SKIP_TERRAFORM } }
+//             steps {
+//                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+//                     sh 'terraform validate'
+//                 }
+//             }
+//         }
+
+//         stage('ssh-keyscan') {
+//             when { expression { return ! params.SKIP_TERRAFORM } }
+//             steps {
+//                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+//                     withCredentials([
+//                         sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+//                     ]) {
+//                         sh '''
+//                         mkdir -p ~/.ssh
+//                         cp "$SSH_KEY_FILE" ~/.ssh/id_rsa
+//                         chmod 600 ~/.ssh/id_rsa
+
+//                         echo "${TF_VAR_ssh_public_key}" > ~/.ssh/id_rsa.pub
+//                         chmod 644 ~/.ssh/id_rsa.pub
+
+//                         echo "✅ SSH keys copied successfully"
+//                         '''
+//                     }
+//                 }
+//             }
+//         }
+
+//         stage('Terraform Plan') {
+//             when { expression { return !params. SKIP_TERRAFORM } }
+//             steps {
+//                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+//                     sh 'terraform plan -out=tfplan'
+//                 }
+//             }
+//         }
+
+//         stage('Terraform Apply') {
+//             when { expression { return !params.SKIP_TERRAFORM } }
+//             steps {
+//                 dir("Pipline_infrastructure/Terraform/${params.Terraform_DIR ?: "Terraform_AIVmServer"}") {
+//                     sh 'terraform apply -auto-approve tfplan'
+//                 }
+//             }
+//         }
+
+//         stage('Get Public IP and Server username') {
+//             when { expression { return !params.SKIP_TERRAFORM } }
+//             steps {
+//                 dir("Pipline_infrastructure/Terraform/${params. Terraform_DIR ?: "Terraform_AIVmServer"}") {
+//                     script {
+//                         env.PUBLIC_IP = sh(script: "terraform output -raw public_ip", returnStdout: true).trim()
+//                         echo "Public IP is: ${env.PUBLIC_IP}"
+//                         env. SERVER_NAME = sh(script: "terraform output -raw vm_admin_username", returnStdout: true).trim()
+//                         echo "Server Name is: ${env. SERVER_NAME}"
+                        
+//                         // 🔥 احفظ في shared directory بره الـ Terraform folder
+//                         sh """
+//                         mkdir -p ${SHARED_OUTPUTS}
+//                         echo '${env.PUBLIC_IP}' > ${SHARED_OUTPUTS}/server_ip.txt
+//                         echo '${env.SERVER_NAME}' > ${SHARED_OUTPUTS}/server_Name.txt
+//                         """
+//                     }
+//                 }
+//             }
+//         }
+
+//         stage('Archive Outputs') {
+//             when { expression { return !params.SKIP_TERRAFORM } }
+//             steps {
+//                 archiveArtifacts artifacts: "shared_outputs/*", fingerprint: true
+//             }
+//         }
+
+//         stage('Detect IP & Save Global') {
+//             steps {
+//                 script {
+//                     // 🔥 اقرأ من الـ shared directory
+//                     env.ipToUse = env.PUBLIC_IP ?: sh(script: "cat ${SHARED_OUTPUTS}/server_ip.txt", returnStdout: true).trim()
+//                     if (!env.ipToUse) {
+//                         error "No PUBLIC_IP available!"
+//                     }
+//                     echo "✅ Using IP: ${env.ipToUse}"
+//                 }
+//             }
+//         }
+
+//         stage('Detect Server Name & Save Global') {
+//             steps {
+//                 script {
+//                     // 🔥 اقرأ من الـ shared directory
+//                     env.server_Name = env.SERVER_NAME ?: sh(script: "cat ${SHARED_OUTPUTS}/server_Name.txt", returnStdout: true). trim()
+//                     if (!env.server_Name) {
+//                         error "No Server Name available!"
+//                     }
+//                     echo "✅ Using Server Name: ${env.server_Name}"
+//                 }
+//             }
+//         }
+
+//         stage('Setup SSH Key for Ansible') {
+//             steps {
+//                 withCredentials([
+//                     sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+//                 ]) {
+//                     sh '''
+//                     mkdir -p ~/.ssh
+//                     cp "$SSH_KEY_FILE" ~/.ssh/id_rsa
+//                     chmod 600 ~/. ssh/id_rsa
+
+//                     echo "✅ SSH key setup complete"
+//                     echo "Key format check:"
+//                     head -1 ~/.ssh/id_rsa
+
+//                     if ssh-keygen -y -f ~/.ssh/id_rsa > /dev/null 2>&1; then
+//                         echo "✅ SSH key is valid"
+//                     else
+//                         echo "❌ SSH key validation failed"
+//                         exit 1
+//                     fi
+//                     '''
+//                 }
+//             }
+//         }
+
+//         stage('ssh connect') {
+//             steps {
+//                 withCredentials([
+//                     sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
+//                 ]) {
+//                     sh '''
+//                     echo "Testing SSH connection to ${ipToUse}"
+//                     ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_Name}@${ipToUse} "echo Connected successfully"
+//                     '''
+//                 }
+//             }
+//         }
+
+//         stage('create Ansible inventory file') {
+//             steps {
+//                 dir('Pipline_infrastructure/ansible') {
+//                     sh """
+//                     rm -f ansible_inventory.ini
+//                     echo "[all]" | tee ansible_inventory.ini
+//                     echo "server ansible_host=${ipToUse} ansible_user=${server_Name} ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/id_rsa" | tee -a ansible_inventory.ini
+//                     cat ansible_inventory.ini
+//                     """
+//                 }
+//             }
+//         }
+
+//         stage('run Ansible Playbook') {
+//             when { expression { return !params. SKIP_ANSIBLE } }
+//             steps {
+//                 dir('Pipline_infrastructure/ansible') {
+//                     sh 'ansible-playbook -i ansible_inventory.ini SetupVmPlaybook.yml'
+//                 }
+//             }
+//         }
+
+//         stage('Test connectivity to AI Server') {
+//             steps {
+//                 dir('Pipline_infrastructure/ansible') {
+//                     sh '''
+//                     echo "Testing connectivity to AI Server via Ansible"
+//                     ansible all -i ansible_inventory.ini -m ping
+//                     '''
+//                 }
+//             }
+//         }
+//     }
+// }

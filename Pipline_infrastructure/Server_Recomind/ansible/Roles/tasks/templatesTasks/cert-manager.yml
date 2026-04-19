@@ -1,0 +1,6 @@
+---
+- name: Download cert-manager manifest
+  get_url:
+    url: https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+    dest: /tmp/cert-manager.yaml
+    mode: '0644'
