@@ -248,13 +248,9 @@ pipeline{
 
                                 echo "🔍 Running OWASP Dependency Check for ${serviceName}..."
 
-                                sh """
-                                    dependency-check.sh \
-                                        --project ${serviceName} \
-                                        --scan ${servicePath} \
-                                        --format HTML \
-                                        --out ${reportPath}
-                                """
+                                echo 'Running OWASP Dependency Check...'
+                                sh 'mkdir -p dependency-check-report'
+                                dependencyCheck additionalArguments: '--format HTML --out dependency-check-report --scan ${serviceName}  --data ${DEPENDENCY_CHECK_DATA} ', odcInstallation: 'OWASP-Dependency'
 
                                 echo "📝 Report generated: ${reportPath}"
                             }
