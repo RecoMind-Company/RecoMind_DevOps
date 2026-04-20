@@ -1,5 +1,5 @@
 pipeline{
-    agent any
+    agent none
 
     environment {
         DOCKERHUB = credentials('Docker_Hub_Backend')          // credentials من Jenkins (username/password)
@@ -10,51 +10,32 @@ pipeline{
         }
 
     stages {
+
         
         stage("checkout Source code") {
-            steps {
-                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
-            }
-        }
-
-
-        stage('OWASP Dependency Check') {
-            steps {
-                sh 'mkdir -p dependency-check-report'
-                // استخدام Plugin بدلاً من CLI
-                dependencyCheck additionalArguments: '--scan . --format XML --out dependency-report',
-                                odcInstallation: 'OWASP-Dependency'
-            }
-        }
-
-        stage('Archive Dependency Report') {
-            steps {
-                archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
-            }
-        }
-
-
-        stage('SonarQube Analysis') {
-            steps {
-                script {
-                    def scannerHome = tool 'SonarQube_Scanner'
-                    
-                    withSonarQubeEnv('SonarCloud_Server') {
-                        withCredentials([string(credentialsId: 'sonarCloud', variable: 'TOKEN')]) {
-                            sh """
-                                ${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=recomind-backend \
-                                -Dsonar.organization=recomind-company \
-                                -Dsonar.host.url=https://sonarcloud.io \
-                                -Dsonar.sources=. \
-                                -Dsonar.login="${TOKEN}"
-                            """
-                        }
-                    }
+            agent {
+                kubernetes {
+                    yml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: git
+                        image: alpine/git:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
                 }
             }
+            steps {
+                container('git') {
+                    git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
+                }
+                   
+               
+            }
         }
-
         stage('Discover Microservices') {
             steps {
                     script {
@@ -69,6 +50,247 @@ pipeline{
             }
         }
 
+
+        stage("Restore"){
+            agent {
+                kubernetes {
+                    yml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: dotnet
+                        image: mcr.microsoft.com/dotnet/sdk:8.0
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
+
+            steps {
+                container('dotnet') {
+                    script {
+                        int maxParallel = 3  // الحد الأقصى لعدد restores متوازية
+                        def serviceList = services.toList()  // تحويل Array إلى List
+                        def chunks = serviceList.collate(maxParallel)
+
+                        int groupIndex = 1
+                        for (chunk in chunks) {
+                            echo "➡️ Restoring group ${groupIndex}/${chunks.size()} in parallel..."
+
+                            def restoreSteps = [:]
+
+                            for (service in chunk) {
+                                def serviceName = service  // مهم داخل closure
+                                restoreSteps["Restore ${serviceName}"] = {
+                                    sh "dotnet restore ${SERVICES_DIR}/${serviceName} ."
+                                    echo "✅ Restored: ${serviceName}"
+                                }
+                            }
+
+                            parallel restoreSteps  // تشغيل المجموعة بشكل parallel
+                            groupIndex++
+                        }
+
+                        echo "🎉 All services have been restored successfully!"
+                    }
+                }
+            }
+        }
+
+
+
+        stage("Build"){
+            agent {
+                kubernetes {
+                    yml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: dotnet
+                        image: mcr.microsoft.com/dotnet/sdk:8.0
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
+
+            steps {
+                container('dotnet') {
+                    script {
+                        int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
+                        def serviceList = services.toList()  // تحويل Array إلى List
+                        def chunks = serviceList.collate(maxParallel)
+
+                        int groupIndex = 1
+                        for (chunk in chunks) {
+                            echo "➡️ Building group ${groupIndex}/${chunks.size()} in parallel..."
+
+                            def buildSteps = [:]
+
+                            for (service in chunk) {
+                                def serviceName = service  // مهم داخل closure
+                                buildSteps["Build ${serviceName}"] = {
+                                    sh "dotnet build ${SERVICES_DIR}/${serviceName} . -c Release --no-restore"
+                                    echo "✅ Built: ${serviceName}"
+                                }
+                            }
+
+                            parallel buildSteps  // تشغيل المجموعة بشكل parallel
+                            groupIndex++
+                        }
+
+                        echo "🎉 All services have been built successfully!"
+                    }
+                }
+            }
+        }
+
+        
+
+
+        stage('OWASP Dependency Check') {
+
+            agent {
+                kubernetes {
+                    yml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: dependency-check
+                        image: owasp/dependency-check:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
+            steps {
+                container('dependency-check') {
+                    script {
+                    def reportDir = 'dependency-report'
+                    sh "mkdir -p ${reportDir}"
+
+                    int maxParallel = 2  // الحد الأقصى لعدد scans متوازية (أقل من Restore/Build لأنها ثقيلة)
+                    def serviceList = services.toList()  // تحويل Array إلى List
+                    def chunks = serviceList.collate(maxParallel)
+
+                    int groupIndex = 1
+                    for (chunk in chunks) {
+                        echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
+
+                        def scanSteps = [:]
+
+                        for (service in chunk) {
+                            def serviceName = service  // مهم داخل closure
+                            scanSteps["Scan ${serviceName}"] = {
+                                def servicePath = "${SERVICES_DIR}/${serviceName}"
+                                def reportPath = "${reportDir}/dependency-check-${serviceName}.html"
+
+                                echo "🔍 Running OWASP Dependency Check for ${serviceName}..."
+
+                                sh """
+                                    dependency-check.sh \
+                                        --project ${serviceName} \
+                                        --scan ${servicePath} \
+                                        --format HTML \
+                                        --out ${reportPath}
+                                """
+
+                                echo "📝 Report generated: ${reportPath}"
+                            }
+                        }
+
+                        parallel scanSteps  // تشغيل المجموعة بشكل parallel
+                        groupIndex++
+                    }
+
+                    echo "🎉 All OWASP Dependency Checks completed successfully!"
+                    }
+                
+            
+                }
+            }
+        }
+
+        stage('Archive Dependency Report') {
+            steps {
+                archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
+            }
+        }
+
+
+        stage('SonarQube Analysis') {
+            agent {
+                kubernetes {
+                    yml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: dotnet
+                        image: mcr.microsoft.com/dotnet/sdk:8.0
+                        command:
+                        - cat
+                        tty: true
+                      - name: java
+                        image: eclipse-temurin:17-jdk
+                        command: ["cat"]
+                        tty: true 
+                    """
+                }
+            }
+            steps {
+                container('dotnet') {
+                    script {
+                        int maxParallel = 2  // الحد الأقصى لعدد analyses متوازية (أقل من Restore/Build لأنها ثقيلة)
+                        def serviceList = services.toList()  // تحويل Array إلى List
+                        def chunks = serviceList.collate(maxParallel)
+
+                        int groupIndex = 1
+                        for (chunk in chunks) {
+                            echo "➡️ Analyzing group ${groupIndex}/${chunks.size()} in parallel..."
+
+                            def analysisSteps = [:]
+
+                            for (service in chunk) {
+                                def serviceName = service  // مهم داخل closure
+                                analysisSteps["Analyze ${serviceName}"] = {
+                                    sh """
+                                        dotnet tool install --global dotnet-sonarscanner || true
+
+                                        dotnet sonarscanner begin \
+                                        /k:"${serviceName}" \
+                                        /o:"RecoMind Company" \
+                                        /d:sonar.host.url="https://sonarcloud.io" \
+                                        /d:sonar.token="$SONAR_TOKEN"
+
+                                        dotnet build ${SERVICES_DIR}/${serviceName}
+
+                                        dotnet sonarscanner end \
+                                        /d:sonar.token="$SONAR_TOKEN"
+
+
+                                    """
+                                    echo "✅ SonarQube analysis completed for: ${serviceName}"
+                                }
+                            }
+
+                            parallel analysisSteps  // تشغيل المجموعة بشكل parallel
+                            groupIndex++
+                        }
+
+                        echo "🎉 All SonarQube analyses completed successfully!"
+                    }
+                }
+            }
+        }
+
+
         stage('Achieve Services List') {
             steps {
                 writeFile file: 'services.txt', text: services.join('\n')
@@ -77,106 +299,124 @@ pipeline{
         }
 
 
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    for (service in services) {
-                        def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
-                        sh """
-                            docker build  -t ${imageTag} ${SERVICES_DIR}/${service}
-                        """
-                        echo "🛠️ Built image: ${imageTag}"
-                    }
-                }
-                
-            }
-        }
-
-        stage('Prepare Trivy Template') {
-            steps {
-                sh '''
-                    mkdir -p trivy-templates
-                    wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O trivy-templates/html.tpl
-                '''
-            }
-        }
-
-        
-        stage('Trivy Security Scan') {
-            steps {
-                script {
-                    for (service in services) {
-
-                        def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
-                        def reportName = "trivy-${service}.html"
-
-                        echo "🔍 Scanning image: ${imageTag}"
-
-                        sh """
-                            trivy image \
-                                --scanners vuln \
-                                --severity HIGH,CRITICAL \
-                                --timeout 20m \
-                                --exit-code 0 \
-                                --format template \
-                                --template trivy-templates/html.tpl \
-                                -o ${reportName} \
-                                ${imageTag}
-                        """
-
-                        echo "📝 Report generated: ${reportName}"
-                    }
-
-                    archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
+        stage("Build & Push Docker (Kaniko)")
+        {
+            agent {
+                kubernetes {
+                    yml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: kaniko
+                        image: gcr.io/kaniko-project/executor:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
                 }
             }
-        }
 
-        stage('DockerHub Login') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                }
-            }
-        }
+                container('kaniko') {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                        script {
+                            // إعداد ملف config.json لتخزين بيانات اعتماد DockerHub
+                            sh '''
+                                mkdir -p /kaniko/.docker
+                                echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"${DOCKERHUB_USR}\",\"password\":\"${DOCKERHUB_PSW}\"}}}" > /kaniko/.docker/config.json
+                            '''
 
+                            int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
+                            def serviceList = services.toList()  // تحويل Array إلى List
+                            def chunks = serviceList.collate(maxParallel)
 
-        stage('Push Docker Images') {
-            steps {
-                script {
-                    int maxParallel = 3  // الحد الأقصى لعدد pushes متوازية
-                    def serviceList = services.toList()  // تحويل Array إلى List
-                    def chunks = serviceList.collate(maxParallel)
+                            int groupIndex = 1
+                            for (chunk in chunks) {
+                                echo "➡️ Building & Pushing group ${groupIndex}/${chunks.size()} in parallel..."
 
-                    int groupIndex = 1
-                    for (chunk in chunks) {
-                        echo "➡️ Pushing group ${groupIndex}/${chunks.size()} in parallel..."
+                                def kanikoSteps = [:]
 
-                        def pushSteps = [:]
+                                for (service in chunk) {
+                                    def serviceName = service  // مهم داخل closure
+                                    kanikoSteps["Build & Push ${serviceName}"] = {
+                                        def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
+                                        echo "🚀 Building and pushing: ${imageTag}"
 
-                        for (service in chunk) {
-                            def serviceName = service  // مهم داخل closure
-                            pushSteps["Push ${serviceName}"] = {
-                                // تسجيل الدخول داخل كل push step
-                                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                                        sh """
+                                            /kaniko/executor \
+                                                --dockerfile ${SERVICES_DIR}/${serviceName}/Dockerfile \
+                                                --context ${SERVICES_DIR}/${serviceName} \
+                                                --destination ${imageTag} \
+                                                --cache=true \
+                                                --cache-repo=${IMAGE_NAME}:cache
+                                        """
 
-                                    def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
-                                    echo "⏳ Pushing image: ${imageTag}"
-                                    sh "docker push ${imageTag}"
-                                    echo "✅ Pushed image: ${imageTag}"
+                                        echo "✅ Built and pushed: ${imageTag}"
+                                    }
                                 }
+
+                                parallel kanikoSteps  // تشغيل المجموعة بشكل parallel
+                                groupIndex++
                             }
+
+                            echo "🎉 All Docker images have been built and pushed successfully with Kaniko!"
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+        stage('Trivy Security Scan') {
+            agent {
+                kubernetes {
+                    yml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: trivy
+                        image: aquasec/trivy:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
+
+            steps {
+                container('trivy') {
+                    script {
+                        for (service in services) {
+
+                            def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
+                            def reportName = "trivy-${service}.html"
+
+                            echo "🔍 Scanning image: ${imageTag}"
+
+                            sh """
+                                trivy image \
+                                    --scanners vuln \
+                                    --severity HIGH,CRITICAL \
+                                    --timeout 20m \
+                                    --exit-code 0 \
+                                    --format template \
+                                    --template trivy-templates/html.tpl \
+                                    -o ${reportName} \
+                                    ${imageTag}
+                            """
+
+                            echo "📝 Report generated: ${reportName}"
                         }
 
-                        parallel pushSteps  // تشغيل المجموعة بشكل parallel
-                        groupIndex++
+                        archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
                     }
-
-                    echo "🎉 All Docker images have been pushed successfully!"
                 }
             }
         }
+
 
 
         stage('Trigger CD Pipeline') {
