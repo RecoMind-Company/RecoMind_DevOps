@@ -3,7 +3,7 @@ pipeline{
 
     environment {
         DOCKERHUB = credentials('Docker_Hub_Backend')          // credentials من Jenkins (username/password)
-        // SONAR_AUTH_TOKEN = credentials('SonarQube_jenkins') // token SonarQube
+        SONAR_TOKEN = credentials('sonarCloud')  // token SonarQube
         IMAGE_NAME = "redasaad1234/backend"
         TAG = "latest"
         SERVICES_DIR = "Microservices"
@@ -37,7 +37,23 @@ pipeline{
             }
         }
         stage('Discover Microservices') {
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: shell
+                        image: alpine:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
             steps {
+                container('shell') {
                     script {
                     services = sh(
                         script: "ls -d ${SERVICES_DIR}/*/ | xargs -n 1 basename",
@@ -218,8 +234,25 @@ pipeline{
         }
 
         stage('Archive Dependency Report') {
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: shell
+                        image: alpine:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
             steps {
-                archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
+                container('shell') {
+                    archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
+                }
             }
         }
 
@@ -292,9 +325,26 @@ pipeline{
 
 
         stage('Achieve Services List') {
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: shell
+                        image: alpine:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
             steps {
-                writeFile file: 'services.txt', text: services.join('\n')
-                archiveArtifacts artifacts: 'services.txt', allowEmptyArchive: true
+                container('shell') {
+                    writeFile file: 'services.txt', text: services.join('\n')
+                    archiveArtifacts artifacts: 'services.txt', allowEmptyArchive: true
+                }
             }
         }
 
@@ -369,6 +419,32 @@ pipeline{
 
 
 
+        stage('Prepare Trivy Template') {
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: shell
+                        image: alpine:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
+            steps {
+                container('shell') {
+                    sh '''
+                        mkdir -p trivy-templates
+                        wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O trivy-templates/html.tpl
+                    '''
+                }
+            }
+        }
+
         stage('Trivy Security Scan') {
             agent {
                 kubernetes {
@@ -389,29 +465,46 @@ pipeline{
             steps {
                 container('trivy') {
                     script {
-                        for (service in services) {
+                        int maxParallel = 2  // الحد الأقصى لعدد scans متوازية
+                        def serviceList = services.toList()  // تحويل Array إلى List
+                        def chunks = serviceList.collate(maxParallel)
 
-                            def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
-                            def reportName = "trivy-${service}.html"
+                        int groupIndex = 1
+                        for (chunk in chunks) {
+                            echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
 
-                            echo "🔍 Scanning image: ${imageTag}"
+                            def trivySteps = [:]
 
-                            sh """
-                                trivy image \
-                                    --scanners vuln \
-                                    --severity HIGH,CRITICAL \
-                                    --timeout 20m \
-                                    --exit-code 0 \
-                                    --format template \
-                                    --template trivy-templates/html.tpl \
-                                    -o ${reportName} \
-                                    ${imageTag}
-                            """
+                            for (service in chunk) {
+                                def serviceName = service  // مهم داخل closure
+                                trivySteps["Scan ${serviceName}"] = {
+                                    def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
+                                    def reportName = "trivy-${serviceName}.html"
 
-                            echo "📝 Report generated: ${reportName}"
+                                    echo "🔍 Scanning image: ${imageTag}"
+
+                                    sh """
+                                        trivy image \
+                                            --scanners vuln \
+                                            --severity HIGH,CRITICAL \
+                                            --timeout 20m \
+                                            --exit-code 0 \
+                                            --format template \
+                                            --template trivy-templates/html.tpl \
+                                            -o ${reportName} \
+                                            ${imageTag}
+                                    """
+
+                                    echo "📝 Report generated: ${reportName}"
+                                }
+                            }
+
+                            parallel trivySteps  // تشغيل المجموعة بشكل parallel
+                            groupIndex++
                         }
 
                         archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
+                        echo "🎉 All Trivy security scans completed successfully!"
                     }
                 }
             }
@@ -420,12 +513,30 @@ pipeline{
 
 
         stage('Trigger CD Pipeline') {
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: shell
+                        image: alpine:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
             steps {
-                build job: "Pipeline_Backend_cd", wait: false
+                container('shell') {
+                    build job: "Pipeline_Backend_cd", wait: false
+                }
             }
         }
 
     }
+}
 }
 
 
