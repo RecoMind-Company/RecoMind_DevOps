@@ -6,7 +6,7 @@ pipeline{
         SONAR_TOKEN = credentials('sonarCloud')  // token SonarQube
         IMAGE_NAME = "redasaad1234/backend"
         TAG = "latest"
-        SERVICES_DIR = "Pipeline_Backend/Microservices"  // Updated path
+        SERVICES_DIR = "Microservices/"  // Updated path
         }
 
     stages {
@@ -109,6 +109,7 @@ pipeline{
 
             steps {
                 container('dotnet') {
+                    unstash 'source'
                     script {
                         int maxParallel = 3  // الحد الأقصى لعدد restores متوازية
                         def serviceList = services.toList()  // تحويل Array إلى List
@@ -159,6 +160,7 @@ pipeline{
 
             steps {
                 container('dotnet') {
+                    unstash 'source'
                     script {
                         int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
                         def serviceList = services.toList()  // تحويل Array إلى List
@@ -210,6 +212,7 @@ pipeline{
             }
             steps {
                 container('dependency-check') {
+                    unstash 'source'
                     script {
                     def reportDir = 'dependency-report'
                     sh "mkdir -p ${reportDir}"
@@ -302,6 +305,7 @@ pipeline{
             }
             steps {
                 container('dotnet') {
+                    unstash 'source'
                     script {
                         int maxParallel = 2  // الحد الأقصى لعدد analyses متوازية (أقل من Restore/Build لأنها ثقيلة)
                         def serviceList = services.toList()  // تحويل Array إلى List
@@ -392,6 +396,7 @@ pipeline{
 
             steps {
                 container('kaniko') {
+                    unstash 'source'
                     withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                         script {
                             // إعداد ملف config.json لتخزين بيانات اعتماد DockerHub
@@ -487,6 +492,7 @@ pipeline{
 
             steps {
                 container('trivy') {
+                    unstash 'source'
                     script {
                         int maxParallel = 2  // الحد الأقصى لعدد scans متوازية
                         def serviceList = services.toList()  // تحويل Array إلى List
