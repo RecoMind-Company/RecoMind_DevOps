@@ -124,8 +124,14 @@ pipeline{
                             for (service in chunk) {
                                 def serviceName = service  // مهم داخل closure
                                 restoreSteps["Restore ${serviceName}"] = {
-                                    sh "dotnet restore ${SERVICES_DIR}/${serviceName} ."
-                                    echo "✅ Restored: ${serviceName}"
+                                    sh """
+                                    cd ${SERVICES_DIR}/${serviceName}
+
+                                    sln=\$(find . -name "*.sln" | head -n 1)
+
+                                    echo "📦 Restoring: \$sln"
+                                    dotnet restore \$sln
+                                    """
                                 }
                             }
 
@@ -175,7 +181,10 @@ pipeline{
                             for (service in chunk) {
                                 def serviceName = service  // مهم داخل closure
                                 buildSteps["Build ${serviceName}"] = {
-                                    sh "dotnet build ${SERVICES_DIR}/${serviceName} . -c Release --no-restore"
+                                    sh """
+                                    cd ${SERVICES_DIR}/${serviceName}
+                                    dotnet build . -c Release --no-restore
+                                    """
                                     echo "✅ Built: ${serviceName}"
                                 }
                             }
