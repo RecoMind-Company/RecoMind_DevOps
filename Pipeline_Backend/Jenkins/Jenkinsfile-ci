@@ -30,17 +30,11 @@ pipeline{
             }
             steps {
                 container('git') {
-                    script {
-                        // Check if already in DevOps repo or need to checkout Backend
-                        if (fileExists('Pipeline_Backend')) {
-                            echo "✅ Already in DevOps repo structure, using Pipeline_Backend/Microservices"
-                        } else {
-                            echo "📦 Cloning Backend repository..."
-                            sh 'rm -rf * .git || true'
-                            git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git', credentialsId: 'Git_hub'
-                        }
-                    }
+                    git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
+                    stash name: 'source', includes: '**/*'
                 }
+                   
+               
             }
         }
         stage('Discover Microservices') {
@@ -65,42 +59,29 @@ pipeline{
                         // Debug: List what's in the workspace
                         sh "echo '📁 Contents of workspace:' && pwd && ls -la"
                         
-                        // Try to find microservices in different possible locations
-                        def servicesPath = ''
+                        // Check if SERVICES_DIR exists
                         sh """
                             if [ -d "${SERVICES_DIR}" ]; then
-                                echo "✅ Found services at: ${SERVICES_DIR}"
-                            elif [ -d "Pipeline_Backend/Microservices" ]; then
-                                echo "✅ Found services at: Pipeline_Backend/Microservices"
-                            elif [ -d "Microservices" ]; then
-                                echo "✅ Found services at: Microservices"
+                                echo "✅ ${SERVICES_DIR} found"
+                                ls -d ${SERVICES_DIR}/*/ 2>/dev/null || echo "⚠️ No subdirectories found in ${SERVICES_DIR}"
                             else
-                                echo "❌ Microservices directory not found!"
-                                echo "Looking for any 'Microservices' folder:"
-                                find . -type d -name "Microservices" 2>/dev/null || echo "None found"
+                                echo "❌ ${SERVICES_DIR} not found! Listing available directories..."
+                                ls -la
                                 exit 1
                             fi
                         """
                         
                         // Discover services
                         services = sh(
-                            script: """
-                                if [ -d "${SERVICES_DIR}" ]; then
-                                    ls -d ${SERVICES_DIR}/*/ 2>/dev/null | xargs -n 1 basename || echo ''
-                                elif [ -d "Pipeline_Backend/Microservices" ]; then
-                                    ls -d Pipeline_Backend/Microservices/*/ 2>/dev/null | xargs -n 1 basename || echo ''
-                                else
-                                    ls -d Microservices/*/ 2>/dev/null | xargs -n 1 basename || echo ''
-                                fi
-                            """,
+                            script: "ls -d ${SERVICES_DIR}/*/ 2>/dev/null | xargs -n 1 basename || echo ''",
                             returnStdout: true
-                        ).trim().split("\n").findAll { it != '' && !it.contains("No such") }
+                        ).trim().split("\n").findAll { it != '' }
 
                         if (services.isEmpty() || services[0] == '') {
-                            echo "⚠️ No services found!"
+                            echo "⚠️ No services found! Check repository structure."
                             services = []
                         } else {
-                            echo "🔍 Found ${services.size()} services: ${services}"
+                            echo "🔍 Found services: ${services}"
                         }
                     }
                 }
