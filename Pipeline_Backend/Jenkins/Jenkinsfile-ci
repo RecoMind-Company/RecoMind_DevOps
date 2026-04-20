@@ -183,7 +183,11 @@ pipeline{
                                 buildSteps["Build ${serviceName}"] = {
                                     sh """
                                     cd ${SERVICES_DIR}/${serviceName}
-                                    dotnet build . -c Release --no-restore
+
+                                    sln=\$(find . -name "*.sln" | head -n 1)
+
+                                    echo "📦 Restoring: \$sln"
+                                    dotnet build \$sln -c Release --no-restore
                                     """
                                     echo "✅ Built: ${serviceName}"
                                 }
