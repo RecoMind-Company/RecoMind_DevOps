@@ -6,7 +6,7 @@ pipeline{
         SONAR_TOKEN = credentials('sonarCloud')  // token SonarQube
         IMAGE_NAME = "redasaad1234/backend"
         TAG = "latest"
-        SERVICES_DIR = "Microservices"
+        SERVICES_DIR = "Pipeline_Backend/Microservices"  // Updated path
         }
 
     stages {
@@ -30,10 +30,17 @@ pipeline{
             }
             steps {
                 container('git') {
-                    git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
+                    script {
+                        // Check if already in DevOps repo or need to checkout Backend
+                        if (fileExists('Pipeline_Backend')) {
+                            echo "✅ Already in DevOps repo structure, using Pipeline_Backend/Microservices"
+                        } else {
+                            echo "📦 Cloning Backend repository..."
+                            sh 'rm -rf * .git || true'
+                            git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git', credentialsId: 'Git_hub'
+                        }
+                    }
                 }
-                   
-               
             }
         }
         stage('Discover Microservices') {
@@ -58,29 +65,42 @@ pipeline{
                         // Debug: List what's in the workspace
                         sh "echo '📁 Contents of workspace:' && pwd && ls -la"
                         
-                        // Check if SERVICES_DIR exists
+                        // Try to find microservices in different possible locations
+                        def servicesPath = ''
                         sh """
                             if [ -d "${SERVICES_DIR}" ]; then
-                                echo "✅ ${SERVICES_DIR} found"
-                                ls -d ${SERVICES_DIR}/*/ 2>/dev/null || echo "⚠️ No subdirectories found in ${SERVICES_DIR}"
+                                echo "✅ Found services at: ${SERVICES_DIR}"
+                            elif [ -d "Pipeline_Backend/Microservices" ]; then
+                                echo "✅ Found services at: Pipeline_Backend/Microservices"
+                            elif [ -d "Microservices" ]; then
+                                echo "✅ Found services at: Microservices"
                             else
-                                echo "❌ ${SERVICES_DIR} not found! Listing available directories..."
-                                ls -la
+                                echo "❌ Microservices directory not found!"
+                                echo "Looking for any 'Microservices' folder:"
+                                find . -type d -name "Microservices" 2>/dev/null || echo "None found"
                                 exit 1
                             fi
                         """
                         
                         // Discover services
                         services = sh(
-                            script: "ls -d ${SERVICES_DIR}/*/ 2>/dev/null | xargs -n 1 basename || echo ''",
+                            script: """
+                                if [ -d "${SERVICES_DIR}" ]; then
+                                    ls -d ${SERVICES_DIR}/*/ 2>/dev/null | xargs -n 1 basename || echo ''
+                                elif [ -d "Pipeline_Backend/Microservices" ]; then
+                                    ls -d Pipeline_Backend/Microservices/*/ 2>/dev/null | xargs -n 1 basename || echo ''
+                                else
+                                    ls -d Microservices/*/ 2>/dev/null | xargs -n 1 basename || echo ''
+                                fi
+                            """,
                             returnStdout: true
-                        ).trim().split("\n").findAll { it != '' }
+                        ).trim().split("\n").findAll { it != '' && !it.contains("No such") }
 
                         if (services.isEmpty() || services[0] == '') {
-                            echo "⚠️ No services found! Check repository structure."
+                            echo "⚠️ No services found!"
                             services = []
                         } else {
-                            echo "🔍 Found services: ${services}"
+                            echo "🔍 Found ${services.size()} services: ${services}"
                         }
                     }
                 }
