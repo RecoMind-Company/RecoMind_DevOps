@@ -30,7 +30,7 @@ pipeline{
             }
             steps {
                 container('git') {
-                    DirDelete()  // تنظيف workspace قبل السحب
+                    deleteDir()  // تنظيف workspace قبل السحب
                     git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
                     stash name: 'source', includes: '**/*'
                 }
