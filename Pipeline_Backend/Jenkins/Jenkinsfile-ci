@@ -405,13 +405,13 @@ pipeline{
                     apiVersion: v1
                     kind: Pod
                     spec:
-                    containers:
-                    - name: kaniko
+                      containers:
+                      - name: kaniko
                         image: gcr.io/kaniko-project/executor:debug
                         command: ["cat"]
                         tty: true
                         resources:
-                        requests:
+                          requests:
                             cpu: "500m"
                             memory: "1Gi"
                     """
