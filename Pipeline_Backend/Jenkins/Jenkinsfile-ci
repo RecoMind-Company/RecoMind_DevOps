@@ -8,6 +8,7 @@ pipeline{
         DEPENDENCY_CHECK_DATA = "/var/jenkins_home/caches/dependency-check"
         TAG = "latest"
         SERVICES_DIR = "Microservices"  // Updated path
+        NVD_API_KEY = credentials('nvd-api-key-id')
         }
 
     stages {
@@ -251,7 +252,7 @@ pipeline{
 
                                 echo 'Running OWASP Dependency Check...'
                                 sh 'mkdir -p dependency-check-report'
-                                dependencyCheck additionalArguments: '--format HTML --out dependency-check-report --scan ${serviceName}  --data ${DEPENDENCY_CHECK_DATA} ', odcInstallation: 'OWASP-Dependency'
+                                dependencyCheck additionalArguments: '--format HTML --out dependency-check-report --scan ${serviceName}  --data ${DEPENDENCY_CHECK_DATA} --nvdApiKey ${NVD_API_KEY} ', odcInstallation: 'OWASP-Dependency'
 
                                 echo "📝 Report generated: ${reportPath}"
                             }
@@ -316,53 +317,56 @@ pipeline{
             steps {
                 container('dotnet') {
                     unstash 'source'
-                    script {
-                        int maxParallel = 2  // الحد الأقصى لعدد analyses متوازية (أقل من Restore/Build لأنها ثقيلة)
-                        def serviceList = services.toList()  // تحويل Array إلى List
-                        def chunks = serviceList.collate(maxParallel)
+                    withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN_SECURE')]) {
+                        script {
+                            int maxParallel = 2
+                            def serviceList = services.toList()
+                            def chunks = serviceList.collate(maxParallel)
 
-                        int groupIndex = 1
-                        for (chunk in chunks) {
-                            echo "➡️ Analyzing group ${groupIndex}/${chunks.size()} in parallel..."
+                            int groupIndex = 1
+                            for (chunk in chunks) {
+                                echo "➡️ Analyzing group ${groupIndex}/${chunks.size()} in parallel..."
 
-                            def analysisSteps = [:]
+                                def analysisSteps = [:]
 
-                            for (service in chunk) {
-                                def serviceName = service  // مهم داخل closure
-                                analysisSteps["Analyze ${serviceName}"] = {
-                                    sh """
-                                        cd ${SERVICES_DIR}/${serviceName}
+                                for (service in chunk) {
+                                    def serviceName = service
+                                    analysisSteps["Analyze ${serviceName}"] = {
+                                        sh '''
+                                            export PATH="$PATH:/root/.dotnet/tools"
+                                            cd ${SERVICES_DIR}/${serviceName}
 
-                                        # Find .csproj file
-                                        csproj=\$(find . -name "*.csproj" -type f | head -n 1)
+                                            # Find .csproj file
+                                            csproj=$(find . -name "*.csproj" -type f | head -n 1)
 
-                                        if [ -z "\$csproj" ]; then
-                                            echo "❌ No .csproj found in ${serviceName}"
-                                            exit 1
-                                        fi
+                                            if [ -z "$csproj" ]; then
+                                                echo "❌ No .csproj found in ${serviceName}"
+                                                exit 1
+                                            fi
 
-                                        dotnet tool install --global dotnet-sonarscanner || true
+                                            dotnet tool install --global dotnet-sonarscanner || true
 
-                                        dotnet sonarscanner begin \
-                                        /k:"recomind-${serviceName}" \
-                                        /o:"recomind-company" \
-                                        /d:sonar.host.url="https://sonarcloud.io" \
-                                        /d:sonar.token="$SONAR_TOKEN"
+                                            dotnet sonarscanner begin \
+                                            /k:"recomind-${serviceName}" \
+                                            /o:"recomind-company" \
+                                            /d:sonar.host.url="https://sonarcloud.io" \
+                                            /d:sonar.token="${SONAR_TOKEN_SECURE}"
 
-                                        dotnet build \$csproj -c Release
+                                            dotnet build "$csproj" -c Release
 
-                                        dotnet sonarscanner end \
-                                        /d:sonar.token="$SONAR_TOKEN"
-                                    """
-                                    echo "✅ SonarQube analysis completed for: ${serviceName}"
+                                            dotnet sonarscanner end \
+                                            /d:sonar.token="${SONAR_TOKEN_SECURE}"
+                                        '''
+                                        echo "✅ SonarQube analysis completed for: ${serviceName}"
+                                    }
                                 }
+
+                                parallel analysisSteps
+                                groupIndex++
                             }
 
-                            parallel analysisSteps  // تشغيل المجموعة بشكل parallel
-                            groupIndex++
+                            echo "🎉 All SonarQube analyses completed successfully!"
                         }
-
-                        echo "🎉 All SonarQube analyses completed successfully!"
                     }
                 }
             }
