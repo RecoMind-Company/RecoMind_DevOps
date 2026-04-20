@@ -332,31 +332,31 @@ pipeline{
                                 for (service in chunk) {
                                     def serviceName = service
                                     analysisSteps["Analyze ${serviceName}"] = {
-                                        sh '''
-                                            export PATH="$PATH:/root/.dotnet/tools"
+                                        sh """
+                                            export PATH="\$PATH:/root/.dotnet/tools"
                                             cd ${SERVICES_DIR}/${serviceName}
 
                                             # Find .csproj file
-                                            csproj=$(find . -name "*.csproj" -type f | head -n 1)
+                                            csproj=\$(find . -name "*.csproj" -type f | head -n 1)
 
-                                            if [ -z "$csproj" ]; then
+                                            if [ -z "\$csproj" ]; then
                                                 echo "❌ No .csproj found in ${serviceName}"
                                                 exit 1
                                             fi
 
                                             dotnet tool install --global dotnet-sonarscanner || true
 
-                                            dotnet sonarscanner begin \
-                                            /k:"recomind-${serviceName}" \
-                                            /o:"recomind-company" \
-                                            /d:sonar.host.url="https://sonarcloud.io" \
-                                            /d:sonar.token="${SONAR_TOKEN_SECURE}"
+                                            dotnet sonarscanner begin \\
+                                            /k:"recomind-${serviceName}" \\
+                                            /o:"recomind-company" \\
+                                            /d:sonar.host.url="https://sonarcloud.io" \\
+                                            /d:sonar.token="${SONAR_TOKEN}"
 
-                                            dotnet build "$csproj" -c Release
+                                            dotnet build "\$csproj" -c Release
 
-                                            dotnet sonarscanner end \
-                                            /d:sonar.token="${SONAR_TOKEN_SECURE}"
-                                        '''
+                                            dotnet sonarscanner end \\
+                                            /d:sonar.token="${SONAR_TOKEN}"
+                                        """
                                         echo "✅ SonarQube analysis completed for: ${serviceName}"
                                     }
                                 }
