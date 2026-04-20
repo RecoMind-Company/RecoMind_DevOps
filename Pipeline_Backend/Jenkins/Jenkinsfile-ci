@@ -418,22 +418,33 @@ pipeline{
             steps {
                 container('kaniko') {
                     unstash 'source'
-                    withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         script {
                             // إعداد ملف config.json لتخزين بيانات اعتماد DockerHub
                             sh """
                                 mkdir -p /kaniko/.docker
-                                cat > /kaniko/.docker/config.json << 'EOF'
+                                
+                                # Create proper JSON config with credentials
+                                cat > /kaniko/.docker/config.json << EOF
 {
   "auths": {
     "https://index.docker.io/v1/": {
-      "username": "${USER}",
-      "password": "${PASS}"
+      "username": "$DOCKER_USER",
+      "password": "$DOCKER_PASS"
     }
   }
 }
 EOF
+
+                                # Verify the config file is valid JSON
+                                echo "Config file created:"
                                 cat /kaniko/.docker/config.json
+                                
+                                # Optional: validate JSON
+                                if command -v jq &> /dev/null; then
+                                    echo "Validating JSON..."
+                                    jq . /kaniko/.docker/config.json || exit 1
+                                fi
                             """
 
                             int maxParallel = 3
