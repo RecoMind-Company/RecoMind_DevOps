@@ -55,6 +55,7 @@ pipeline{
             }
             steps {
                 container('shell') {
+                    unstash 'source'
                     script {
                         // Debug: List what's in the workspace
                         sh "echo '📁 Contents of workspace:' && pwd && ls -la"
