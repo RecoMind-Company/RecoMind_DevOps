@@ -55,12 +55,33 @@ pipeline{
             steps {
                 container('shell') {
                     script {
+                        // Debug: List what's in the workspace
+                        sh "echo '📁 Contents of workspace:' && pwd && ls -la"
+                        
+                        // Check if SERVICES_DIR exists
+                        sh """
+                            if [ -d "${SERVICES_DIR}" ]; then
+                                echo "✅ ${SERVICES_DIR} found"
+                                ls -d ${SERVICES_DIR}/*/ 2>/dev/null || echo "⚠️ No subdirectories found in ${SERVICES_DIR}"
+                            else
+                                echo "❌ ${SERVICES_DIR} not found! Listing available directories..."
+                                ls -la
+                                exit 1
+                            fi
+                        """
+                        
+                        // Discover services
                         services = sh(
-                            script: "ls -d ${SERVICES_DIR}/*/ | xargs -n 1 basename",
+                            script: "ls -d ${SERVICES_DIR}/*/ 2>/dev/null | xargs -n 1 basename || echo ''",
                             returnStdout: true
-                        ).trim().split("\n")
+                        ).trim().split("\n").findAll { it != '' }
 
-                        echo "🔍 Found services: ${services}"
+                        if (services.isEmpty() || services[0] == '') {
+                            echo "⚠️ No services found! Check repository structure."
+                            services = []
+                        } else {
+                            echo "🔍 Found services: ${services}"
+                        }
                     }
                 }
             }
