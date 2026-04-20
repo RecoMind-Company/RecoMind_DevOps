@@ -6,7 +6,7 @@ pipeline{
         SONAR_TOKEN = credentials('sonarCloud')  // token SonarQube
         IMAGE_NAME = "redasaad1234/backend"
         TAG = "latest"
-        SERVICES_DIR = "Microservices/"  // Updated path
+        SERVICES_DIR = "Microservices"  // Updated path
         }
 
     stages {
