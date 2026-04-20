@@ -450,7 +450,7 @@ pipeline{
                                 sh """
                                     /kaniko/executor \
                                         --dockerfile ${SERVICES_DIR}/${serviceName}/Dockerfile \
-                                        --context ${WORKSPACE} \
+                                        --context ${SERVICES_DIR}/${serviceName} \
                                         --destination ${imageTag} \
                                         --cache=true \
                                         --cache-repo=${IMAGE_NAME}:cache
