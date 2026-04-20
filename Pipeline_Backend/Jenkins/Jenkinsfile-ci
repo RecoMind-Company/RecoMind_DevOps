@@ -149,149 +149,149 @@ pipeline{
 
 
 
-        stage("Build"){
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: dotnet
-                        image: mcr.microsoft.com/dotnet/sdk:8.0
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
+        // stage("Build"){
+        //     agent {
+        //         kubernetes {
+        //             yaml """
+        //             apiVersion: v1
+        //             kind: Pod
+        //             spec:
+        //               containers:
+        //               - name: dotnet
+        //                 image: mcr.microsoft.com/dotnet/sdk:8.0
+        //                 command:
+        //                 - cat
+        //                 tty: true
+        //             """
+        //         }
+        //     }
 
-            steps {
-                container('dotnet') {
-                    unstash 'source'
-                    script {
-                        int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
-                        def serviceList = services.toList()  // تحويل Array إلى List
-                        def chunks = serviceList.collate(maxParallel)
+        //     steps {
+        //         container('dotnet') {
+        //             unstash 'source'
+        //             script {
+        //                 int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
+        //                 def serviceList = services.toList()  // تحويل Array إلى List
+        //                 def chunks = serviceList.collate(maxParallel)
 
-                        int groupIndex = 1
-                        for (chunk in chunks) {
-                            echo "➡️ Building group ${groupIndex}/${chunks.size()} in parallel..."
+        //                 int groupIndex = 1
+        //                 for (chunk in chunks) {
+        //                     echo "➡️ Building group ${groupIndex}/${chunks.size()} in parallel..."
 
-                            def buildSteps = [:]
+        //                     def buildSteps = [:]
 
-                            for (service in chunk) {
-                                def serviceName = service  // مهم داخل closure
-                                buildSteps["Build ${serviceName}"] = {
-                                    sh """
-                                    cd ${SERVICES_DIR}/${serviceName}
+        //                     for (service in chunk) {
+        //                         def serviceName = service  // مهم داخل closure
+        //                         buildSteps["Build ${serviceName}"] = {
+        //                             sh """
+        //                             cd ${SERVICES_DIR}/${serviceName}
 
-                                    sln=\$(find . -name "*.sln" | head -n 1)
+        //                             sln=\$(find . -name "*.sln" | head -n 1)
 
-                                    echo "� Building: \$sln"
-                                    dotnet build \$sln -c Release
-                                    """
-                                    echo "✅ Built: ${serviceName}"
-                                }
-                            }
+        //                             echo "� Building: \$sln"
+        //                             dotnet build \$sln -c Release
+        //                             """
+        //                             echo "✅ Built: ${serviceName}"
+        //                         }
+        //                     }
 
-                            parallel buildSteps  // تشغيل المجموعة بشكل parallel
-                            groupIndex++
-                        }
+        //                     parallel buildSteps  // تشغيل المجموعة بشكل parallel
+        //                     groupIndex++
+        //                 }
 
-                        echo "🎉 All services have been built successfully!"
-                    }
-                }
-            }
-        }
+        //                 echo "🎉 All services have been built successfully!"
+        //             }
+        //         }
+        //     }
+        // }
 
         
 
 
-        stage('OWASP Dependency Check') {
+        // stage('OWASP Dependency Check') {
 
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: dependency-check
-                        image: owasp/dependency-check:latest
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
-            steps {
-                container('dependency-check') {
-                    unstash 'source'
-                    script {
-                    def reportDir = 'dependency-report'
-                    sh "mkdir -p ${reportDir}"
+        //     agent {
+        //         kubernetes {
+        //             yaml """
+        //             apiVersion: v1
+        //             kind: Pod
+        //             spec:
+        //               containers:
+        //               - name: dependency-check
+        //                 image: owasp/dependency-check:latest
+        //                 command:
+        //                 - cat
+        //                 tty: true
+        //             """
+        //         }
+        //     }
+        //     steps {
+        //         container('dependency-check') {
+        //             unstash 'source'
+        //             script {
+        //             def reportDir = 'dependency-report'
+        //             sh "mkdir -p ${reportDir}"
 
-                    int maxParallel = 2  // الحد الأقصى لعدد scans متوازية (أقل من Restore/Build لأنها ثقيلة)
-                    def serviceList = services.toList()  // تحويل Array إلى List
-                    def chunks = serviceList.collate(maxParallel)
+        //             int maxParallel = 2  // الحد الأقصى لعدد scans متوازية (أقل من Restore/Build لأنها ثقيلة)
+        //             def serviceList = services.toList()  // تحويل Array إلى List
+        //             def chunks = serviceList.collate(maxParallel)
 
-                    int groupIndex = 1
-                    for (chunk in chunks) {
-                        echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
+        //             int groupIndex = 1
+        //             for (chunk in chunks) {
+        //                 echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
 
-                        def scanSteps = [:]
+        //                 def scanSteps = [:]
 
-                        for (service in chunk) {
-                            def serviceName = service  // مهم داخل closure
-                            scanSteps["Scan ${serviceName}"] = {
-                                def servicePath = "${SERVICES_DIR}/${serviceName}"
-                                def reportPath = "${reportDir}/dependency-check-${serviceName}.html"
+        //                 for (service in chunk) {
+        //                     def serviceName = service  // مهم داخل closure
+        //                     scanSteps["Scan ${serviceName}"] = {
+        //                         def servicePath = "${SERVICES_DIR}/${serviceName}"
+        //                         def reportPath = "${reportDir}/dependency-check-${serviceName}.html"
 
-                                echo "🔍 Running OWASP Dependency Check for ${serviceName}..."
+        //                         echo "🔍 Running OWASP Dependency Check for ${serviceName}..."
 
-                                echo 'Running OWASP Dependency Check...'
-                                sh 'mkdir -p dependency-check-report'
-                                dependencyCheck additionalArguments: '--format HTML --out dependency-check-report --scan ${serviceName}  --data ${DEPENDENCY_CHECK_DATA} --nvdApiKey ${NVD_API_KEY} ', odcInstallation: 'OWASP-Dependency'
+        //                         echo 'Running OWASP Dependency Check...'
+        //                         sh 'mkdir -p dependency-check-report'
+        //                         dependencyCheck additionalArguments: '--format HTML --out dependency-check-report --scan ${serviceName}  --data ${DEPENDENCY_CHECK_DATA} --nvdApiKey ${NVD_API_KEY} ', odcInstallation: 'OWASP-Dependency'
 
-                                echo "📝 Report generated: ${reportPath}"
-                            }
-                        }
+        //                         echo "📝 Report generated: ${reportPath}"
+        //                     }
+        //                 }
 
-                        parallel scanSteps  // تشغيل المجموعة بشكل parallel
-                        groupIndex++
-                    }
+        //                 parallel scanSteps  // تشغيل المجموعة بشكل parallel
+        //                 groupIndex++
+        //             }
 
-                    echo "🎉 All OWASP Dependency Checks completed successfully!"
-                    }
+        //             echo "🎉 All OWASP Dependency Checks completed successfully!"
+        //             }
                 
             
-                }
-            }
-        }
+        //         }
+        //     }
+        // }
 
-        stage('Archive Dependency Report') {
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: shell
-                        image: alpine:latest
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
-            steps {
-                container('shell') {
-                    archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
-                }
-            }
-        }
+        // stage('Archive Dependency Report') {
+        //     agent {
+        //         kubernetes {
+        //             yaml """
+        //             apiVersion: v1
+        //             kind: Pod
+        //             spec:
+        //               containers:
+        //               - name: shell
+        //                 image: alpine:latest
+        //                 command:
+        //                 - cat
+        //                 tty: true
+        //             """
+        //         }
+        //     }
+        //     steps {
+        //         container('shell') {
+        //             archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
+        //         }
+        //     }
+        // }
 
 
         stage('SonarQube Analysis') {
