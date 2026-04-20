@@ -55,14 +55,14 @@ pipeline{
             steps {
                 container('shell') {
                     script {
-                    services = sh(
-                        script: "ls -d ${SERVICES_DIR}/*/ | xargs -n 1 basename",
-                        returnStdout: true
-                    ).trim().split("\n")
+                        services = sh(
+                            script: "ls -d ${SERVICES_DIR}/*/ | xargs -n 1 basename",
+                            returnStdout: true
+                        ).trim().split("\n")
 
-                    echo "🔍 Found services: ${services}"
+                        echo "🔍 Found services: ${services}"
+                    }
                 }
-
             }
         }
 
