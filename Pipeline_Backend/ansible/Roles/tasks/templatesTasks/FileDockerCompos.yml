@@ -1,9 +1,0 @@
----
-
-
-
-- name: move docker-compose.yml on remote server
-  template:
-    src:  docker-compose.yml.j2
-    dest: /home/BackendAdmin/docker-compose.yml
-  become: yes

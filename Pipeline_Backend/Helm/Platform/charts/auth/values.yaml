@@ -1,0 +1,57 @@
+
+nameOverride: "recomind"
+fullnameOverride: "recomind"
+
+replicaCount: 2
+
+image:
+  repository: recomind/auth-service
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+virtualService:
+  enabled: true
+
+service:
+  name: auth-svc
+  type: ClusterIP
+  http:
+    name: http
+    port: 8011
+    protocol: http
+  grpc:
+    name: grpc
+    port: 5011
+    protocol: h2c
+
+destinationRule:
+  enabled: true
+  tls:
+    mode: ISTIO_MUTUAL
+  loadBalancer: ROUND_ROBIN
+  h2UpgradePolicy: UPGRADE
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+env:
+  - name: jwt__Audience
+    valueFrom:
+      configMapKeyRef:
+        name: recomind-config
+        key: jwt-Audience
+  - name: jwt__Issuers
+    valueFrom:
+      configMapKeyRef:
+        name: recomind-config
+        key: jwt-Issuer
+  - name: jwt__Expire  
+    valueFrom:
+      configMapKeyRef:
+        name: recomind-config
+        key: jwt-Expire
