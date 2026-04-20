@@ -15,7 +15,7 @@ pipeline{
         stage("checkout Source code") {
             agent {
                 kubernetes {
-                    yml """
+                    yaml """
                     apiVersion: v1
                     kind: Pod
                     spec:
@@ -54,7 +54,7 @@ pipeline{
         stage("Restore"){
             agent {
                 kubernetes {
-                    yml """
+                    yaml """
                     apiVersion: v1
                     kind: Pod
                     spec:
@@ -104,7 +104,7 @@ pipeline{
         stage("Build"){
             agent {
                 kubernetes {
-                    yml """
+                    yaml """
                     apiVersion: v1
                     kind: Pod
                     spec:
@@ -156,7 +156,7 @@ pipeline{
 
             agent {
                 kubernetes {
-                    yml """
+                    yaml """
                     apiVersion: v1
                     kind: Pod
                     spec:
@@ -227,7 +227,7 @@ pipeline{
         stage('SonarQube Analysis') {
             agent {
                 kubernetes {
-                    yml """
+                    yaml """
                     apiVersion: v1
                     kind: Pod
                     spec:
@@ -303,7 +303,7 @@ pipeline{
         {
             agent {
                 kubernetes {
-                    yml """
+                    yaml """
                     apiVersion: v1
                     kind: Pod
                     spec:
@@ -372,7 +372,7 @@ pipeline{
         stage('Trivy Security Scan') {
             agent {
                 kubernetes {
-                    yml """
+                    yaml """
                     apiVersion: v1
                     kind: Pod
                     spec:
