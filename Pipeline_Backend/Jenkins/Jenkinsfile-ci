@@ -5,6 +5,7 @@ pipeline{
         DOCKERHUB = credentials('Docker_Hub_Backend')          // credentials من Jenkins (username/password)
         SONAR_TOKEN = credentials('sonarCloud')  // token SonarQube
         IMAGE_NAME = "redasaad1234/backend"
+        DEPENDENCY_CHECK_DATA = "/var/jenkins_home/caches/dependency-check"
         TAG = "latest"
         SERVICES_DIR = "Microservices"  // Updated path
         }
