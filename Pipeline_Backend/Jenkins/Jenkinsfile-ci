@@ -398,19 +398,26 @@ pipeline{
         }
 
 
-        stage("Build and Push Microservices") {
+        stage("Build and Push (Kaniko - Batch 3)") {
     steps {
         script {
             def serviceList = services.toList()
-            def buildTasks = [:]
+            def batchSize = 3 
+            // تقسيم الخدمات لمجموعات كل مجموعة فيها 3
+            def chunks = serviceList.collate(batchSize)
 
-            for (int i = 0; i < serviceList.size(); i++) {
-                def service = serviceList[i]
-                def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
+            for (int i = 0; i < chunks.size(); i++) {
+                def chunk = chunks[i]
+                def buildTasks = [:]
 
-                buildTasks[service] = {
-                    // تعريف الـ Pod داخل الـ Task لضمان وجود حاوية kaniko في كل Node
-                    podTemplate(yaml: """
+                echo "🚀 Processing Batch ${i + 1}/${chunks.size()}: ${chunk}"
+
+                for (service in chunk) {
+                    def currentService = service 
+                    def imageTag = "${IMAGE_NAME}-${currentService.toLowerCase()}:${TAG}"
+
+                    buildTasks[currentService] = {
+                        podTemplate(yaml: """
 apiVersion: v1
 kind: Pod
 spec:
@@ -421,50 +428,51 @@ spec:
     args: ["99d"]
     resources:
       requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
         cpu: "1"
         memory: "2Gi"
-      limits:
-        cpu: "2"
-        memory: "4Gi"
 """) {
-                        node(POD_LABEL) {
-                            stage("Build ${service}") {
-                                container('kaniko') {
-                                    unstash 'source'
-                                    // حل مشكلة الـ Security Warning باستخدام env variables
-                                    withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                                        sh '''
-                                            # استخدام علامات تنصيص مفردة هنا للأمان
-                                            # جينكنز سيمرر المتغيرات كـ Environment Variables وليس كـ String interpolation
-                                            AUTH=$(echo -n "${DOCKER_USER}:${DOCKER_PASS}" | base64)
-                                            mkdir -p /kaniko/.docker
-                                            echo "{\\"auths\\":{\\"https://index.docker.io/v1/\\":{\\"auth\\":\\"$AUTH\\"}}}" > /kaniko/.docker/config.json
-                                        '''
-
-                                        // تنفيذ الـ Build باستخدام متغيرات البيئة لضمان السرعة والأمان
-                                        sh """
-                                            /kaniko/executor \
-                                                --context "${WORKSPACE}/${SERVICES_DIR}/${service}" \
-                                                --dockerfile "${WORKSPACE}/${SERVICES_DIR}/${service}/Dockerfile" \
-                                                --destination "${imageTag}" \
-                                                --cache=true \
-                                                --cache-repo="${IMAGE_NAME}-cache" \
-                                                --cache-ttl=24h \
-                                                --snapshot-mode=redo \
-                                                --use-new-run
-                                        """
-                                        echo "✅ Successfully built and pushed: ${imageTag}"
+                            node(POD_LABEL) {
+                                stage("Build: ${currentService}") {
+                                    container('kaniko') {
+                                        unstash 'source'
+                                        withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                                            sh '''
+                                                # إعداد الـ Auth بشكل آمن
+                                                AUTH=$(echo -n "${DOCKER_USER}:${DOCKER_PASS}" | base64)
+                                                mkdir -p /kaniko/.docker
+                                                echo "{\\"auths\\":{\\"https://index.docker.io/v1/\\":{\\"auth\\":\\"$AUTH\\"}}}" > /kaniko/.docker/config.json
+                                            '''
+                                            
+                                            sh """
+                                                /kaniko/executor \
+                                                    --context "${WORKSPACE}/${SERVICES_DIR}/${currentService}" \
+                                                    --dockerfile "${WORKSPACE}/${SERVICES_DIR}/${currentService}/Dockerfile" \
+                                                    --destination "${imageTag}" \
+                                                    --cache=true \
+                                                    --cache-repo="${IMAGE_NAME}-cache" \
+                                                    --cache-ttl=24h \
+                                                    --snapshot-mode=redo \
+                                                    --use-new-run
+                                            """
+                                            echo "✅ Finished: ${imageTag}"
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+                // تشغيل الـ 3 خدمات الحالية مع بعض
+                parallel buildTasks
             }
-            parallel buildTasks
         }
     }
 }
+
+
 
 
 
