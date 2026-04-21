@@ -420,9 +420,9 @@ pipeline{
                 for (service in serviceList) {
                     def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
                     
-                    // استخدمنا الثلاث علامات مزدوجة لتمكين حقن imageTag و service
+                    
                     sh """
-                        # يجب وضع \ قبل علامة الـ $ لمتغيرات الـ Shell فقط
+                        
                         AUTH=\$(echo -n "${USER}:${PASS}" | base64)
 
                       
