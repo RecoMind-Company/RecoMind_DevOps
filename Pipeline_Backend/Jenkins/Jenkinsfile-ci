@@ -449,7 +449,7 @@ spec:
                                             sh """
                                                 /kaniko/executor \
                                                     --context "${WORKSPACE}/${SERVICES_DIR}/${currentService}" \
-                                                    --dockerfile "${WORKSPACE}/${SERVICES_DIR}/${currentService}/Dockerfile" \
+                                                    --dockerfile "Dockerfile" \
                                                     --destination "${imageTag}" \
                                                     --cache=true \
                                                     --cache-repo="${IMAGE_NAME}-cache" \
