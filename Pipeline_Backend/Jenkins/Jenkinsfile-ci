@@ -415,7 +415,7 @@ pipeline{
                         """
                     }
                 }
-            }
+            
             steps {
                 container('kaniko') {
                     unstash 'source'
