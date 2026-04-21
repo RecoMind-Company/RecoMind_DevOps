@@ -428,11 +428,11 @@ spec:
     args: ["99d"]
     resources:
       requests:
-        cpu: "500m"
+        cpu: "250m"
         memory: "1Gi"
       limits:
-        cpu: "500m"
-        memory: "2Gi"
+        cpu: "250m"
+        memory: "1Gi"
 """) {
                             node(POD_LABEL) {
                                 stage("Build: ${currentService}") {
