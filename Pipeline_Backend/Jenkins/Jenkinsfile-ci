@@ -398,64 +398,49 @@ pipeline{
         }
 
 
-        stage("Build & Push Docker (Kaniko)") {
-    steps {
-        script {
-    def serviceList = services.toList()
-    // تقسيم الـ 13 خدمة لمجموعات (كل مجموعة فيها 3 خدمات)
-    def chunks = serviceList.collate(3) 
-
-    chunks.each { chunk ->
-        def kanikoSteps = [:]
-        chunk.each { serviceName ->
-            kanikoSteps["Build ${serviceName}"] = {
-                // نفس كود الـ Pod المستقل اللي عملناه
-                node(null) {
-                    podTemplate(yaml: """
-                        apiVersion: v1
-                        kind: Pod
-                        spec:
-                          containers:
-                          - name: kaniko
-                            image: gcr.io/kaniko-project/executor:debug
-                            command: ["cat"]
-                            tty: true
-                            resources:
-                              requests:
-                                cpu: "250m" # قللنا الطلبات شوية عشان الـ Cluster يستوعب
-                                memory: "512Mi"
-                        """) {
-                        node(POD_LABEL) {
-                            container('kaniko') {
-                                unstash 'source'
-                                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                                    def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
-                                    sh """
-                                        mkdir -p /kaniko/.docker
-                                        AUTH=\$(echo -n "${DOCKER_USER}:${DOCKER_PASS}" | base64 | tr -d '\n')
-                                        cat <<EOF > /kaniko/.docker/config.json
-{ "auths": { "https://index.docker.io/v1/": { "auth": "\$AUTH" } } }
-EOF
-                                        /kaniko/executor \
-                                            --dockerfile ${SERVICES_DIR}/${serviceName}/Dockerfile \
-                                            --context ${WORKSPACE} \
-                                            --destination ${imageTag} \
-                                            --cache=true \
-                                            --cache-repo=${IMAGE_NAME}:cache
-                                    """
-                                }
-                            }
+        stage("Build and push (Kaniko)")
+        {
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: kaniko
+                        image: gcr.io/kaniko-project/executor:latest
+                        command:
+                        - cat
+                        tty: true
+                        """
+                    }
+                }
+            }
+            steps {
+                container('kaniko') {
+                    unstash 'source'
+                    script {
+                        def serviceList = services.toList()
+                        for (service in serviceList) {
+                            def imageTag = "${IMAGE_NAME}-${service.toLowerCase()}:${TAG}"
+                            sh """
+                                /kaniko/executor \
+                                    --context ${WORKSPACE}/${SERVICES_DIR}/${service} \
+                                    --dockerfile ${WORKSPACE}/${SERVICES_DIR}/${service}/Dockerfile \
+                                    --destination ${imageTag} \
+                                    --cache=true \
+                                    --cache-repo=${IMAGE_NAME}-cache \
+                                    --cache-ttl=24h
+                            """
+                            echo "✅ Built and pushed image: ${imageTag}"
                         }
                     }
                 }
             }
-            // تشغيل الـ 3 خدمات الحالية بالتوازي
-            parallel kanikoSteps
         }
-    }
-}
-    }
-}
+
+
+
 
 
 
