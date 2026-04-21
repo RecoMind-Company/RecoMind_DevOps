@@ -402,7 +402,7 @@ pipeline{
     steps {
         script {
             def serviceList = services.toList()
-            def batchSize = 3 
+            def batchSize = 2 
             // تقسيم الخدمات لمجموعات كل مجموعة فيها 3
             def chunks = serviceList.collate(batchSize)
 
@@ -431,7 +431,7 @@ spec:
         cpu: "500m"
         memory: "1Gi"
       limits:
-        cpu: "1"
+        cpu: "500m"
         memory: "2Gi"
 """) {
                             node(POD_LABEL) {
