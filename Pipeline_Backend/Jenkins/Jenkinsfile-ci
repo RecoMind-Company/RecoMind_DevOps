@@ -552,7 +552,6 @@ spec:
                 sh "trivy image --download-db-only"
 
                 withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'T_USER', passwordVariable: 'T_PASS')]) {
-                    // شيلنا الـ chunks والـ parallel خالص
                     for (service in services) {
                         def serviceName = service
                         def imageTag = "redasaad1234/backend-${serviceName.toLowerCase()}:${TAG}"
@@ -563,7 +562,13 @@ spec:
                             export TRIVY_USERNAME=''' + "${T_USER}" + '''
                             export TRIVY_PASSWORD=''' + "${T_PASS}" + '''
                             
-                            # نلغي الـ Secret Scan مؤقتاً لتوفير الرامات وتحسين السرعة
+                            # 1. التأكد من وجود الفولدر ونزول الـ Template جوه الـ Pod الحالي
+                            mkdir -p trivy-templates
+                            if [ ! -f trivy-templates/html.tpl ]; then
+                                wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O trivy-templates/html.tpl
+                            fi
+
+                            # 2. تشغيل الفحص
                             trivy image --no-progress --scanners vuln --severity HIGH,CRITICAL \
                                 --format template --template @trivy-templates/html.tpl \
                                 -o trivy-''' + "${serviceName}.html ${imageTag}" + '''
