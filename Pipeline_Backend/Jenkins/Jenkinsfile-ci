@@ -521,71 +521,66 @@ pipeline{
         }
 
         stage('Trivy Security Scan') {
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: trivy
-                        image: aquasec/trivy:latest
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: trivy
+    image: aquasec/trivy:latest
+    command: ["cat"]
+    tty: true
+    resources:
+      requests:
+        memory: "1Gi"   # زودنا الرامات شوية عشان الفحص
+        cpu: "500m"
+    volumeMounts:
+    - name: workspace-volume
+      mountPath: /home/jenkins/agent
+  volumes:
+  - name: workspace-volume
+    emptyDir: {}
+"""
+        }
+    }
     steps {
         container('trivy') {
-            unstash 'source'
-            unstash 'trivy-tpl'
-            // المظلة اللي بتغطي كل الـ Microservices اللي هيتم فحصها
-            withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'TRIVY_USERNAME', passwordVariable: 'TRIVY_PASSWORD')]) {
-                script {
-                    int maxParallel = 2 
-                    def serviceList = services.toList()
-                    def chunks = serviceList.collate(maxParallel)
+            script {
+                // 1. تحميل قاعدة البيانات مرة واحدة فقط للكل
+                echo "📥 Downloading Trivy DB once..."
+                sh "trivy image --download-db-only"
 
-                    int groupIndex = 1
+                // 2. معالجة السيرفس بمعدل هادئ (مثلاً 2 في المرة)
+                int maxParallel = 2 
+                def chunks = services.collate(maxParallel)
+
+                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'T_USER', passwordVariable: 'T_PASS')]) {
                     for (chunk in chunks) {
-                        echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
                         def trivySteps = [:]
-
                         for (service in chunk) {
-                            def serviceName = service 
+                            def serviceName = service
+                            def imageTag = "redasaad1234/backend-${serviceName.toLowerCase()}:${TAG}"
+                            
                             trivySteps["Scan ${serviceName}"] = {
-                                // بناء اسم الـ Image لكل سيرفس لوحدها
-                                def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
-                                def reportName = "trivy-${serviceName}.html"
-
-                                echo "🔍 Scanning image: ${imageTag}"
-
                                 sh """
-                                    # إعداد صلاحيات الدخول قبل الفحص لكل Image
-                                    export TRIVY_USERNAME=${TRIVY_USERNAME}
-                                    export TRIVY_PASSWORD=${TRIVY_PASSWORD}
+                                    export TRIVY_USERNAME='${T_USER}'
+                                    export TRIVY_PASSWORD='${T_PASS}'
                                     
-                                    export TRIVY_CACHE_DIR="/home/jenkins/agent/trivy-cache-${serviceName}"
+                                    # نستخدم Cache dir منفصل بس الـ DB موحدة
+                                    export TRIVY_CACHE_DIR="/tmp/trivy-cache-${serviceName}"
                                     
-                                    # الفحص الفعلي
-                                    trivy image \
-                                        --no-progress \
-                                        --scanners vuln \
-                                        --severity HIGH,CRITICAL \
-                                        --format template \
-                                        --template @trivy-templates/html.tpl \
-                                        -o trivy-${serviceName}.html \
-                                        ${imageTag}
+                                    trivy image --no-progress --severity HIGH,CRITICAL \
+                                        --format template --template @trivy-templates/html.tpl \
+                                        -o trivy-${serviceName}.html ${imageTag}
                                 """
-                                echo "📝 Report generated: ${reportName}"
                             }
                         }
                         parallel trivySteps
-                        groupIndex++
                     }
-                    archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
                 }
+                archiveArtifacts artifacts: "trivy-*.html"
             }
         }
     }
