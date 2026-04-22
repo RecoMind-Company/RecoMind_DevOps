@@ -521,26 +521,21 @@ pipeline{
         }
 
         stage('Trivy Security Scan') {
-    agent {
-        kubernetes {
-            yaml """
-            apiVersion: v1
-            kind: Pod
-            spec:
-              containers:
-              - name: trivy
-                image: aquasec/trivy:latest
-                command: ["cat"]
-                tty: true
-                volumeMounts:
-                - name: jenkins-workspace
-                mountPath: /home/jenkins/agent  # ده المسار الافتراضي للـ workspace في jenkins
-            volumes:
-            - name: jenkins-workspace
-                emptyDir: {}
-            """
-        }
-    }
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: trivy
+                        image: aquasec/trivy:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
     steps {
         container('trivy') {
             unstash 'source'
