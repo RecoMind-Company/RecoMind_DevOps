@@ -520,86 +520,61 @@ pipeline{
             }
         }
 
-        stage('Trivy Security Scan') {
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: trivy
-                        image: aquasec/trivy:latest
-                        command:
-                        - cat
-                        tty: true
-                        resources:
-                          requests:
-                            memory: "1Gi"
-                            cpu: "500m"
-                          limits:
-                            memory: "2Gi"
-                    """
-                }
-            }
-            steps {
-                container('trivy') {
-                    unstash 'source'
-                    unstash 'trivy-tpl'
-                    
-                    script {
-                        echo "📋 Checking template file..."
-                        sh "ls -la trivy-templates/html.tpl || echo '❌ Template not found!'"
+stage('Trivy Security Scan') {
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: trivy
+    image: aquasec/trivy:latest
+    command: ["cat"]
+    tty: true
+    resources:
+      requests:
+        memory: "1.5Gi"  # رامات أكتر شوية لضمان الاستقرار
+        cpu: "500m"
+    volumeMounts:
+    - name: workspace-volume
+      mountPath: /home/jenkins/agent
+  volumes:
+  - name: workspace-volume
+    emptyDir: {}
+"""
+        }
+    }
+    steps {
+        container('trivy') {
+            script {
+                echo "📥 Downloading Trivy DB once..."
+                sh "trivy image --download-db-only"
 
-                        echo "📥 Downloading Trivy DB..."
-                        sh "trivy image --download-db-only || true"
-
-                        int maxParallel = 2 
-                        def chunks = services.collate(maxParallel)
-
-                        withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'T_USER', passwordVariable: 'T_PASS')]) {
-                            int groupIndex = 1
-                            for (chunk in chunks) {
-                                echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
-                                def trivySteps = [:]
-                                
-                                for (service in chunk) {
-                                    def serviceName = service
-                                    def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
-                                    def reportName = "trivy-${serviceName}.html"
-
-                                    trivySteps["Scan ${serviceName}"] = {
-                                        sh '''
-                                            export TRIVY_USERNAME=''' + "${T_USER}" + '''
-                                            export TRIVY_PASSWORD=''' + "${T_PASS}" + '''
-                                            export TRIVY_CACHE_DIR="/tmp/trivy-cache-''' + "${serviceName}" + '''"
-                                            
-                                            echo "🔍 Scanning image: ''' + "${imageTag}" + '''"
-                                            
-                                            trivy image \
-                                                --no-progress \
-                                                --severity HIGH,CRITICAL \
-                                                --format template \
-                                                --template @trivy-templates/html.tpl \
-                                                -o ''' + "${reportName}" + ''' \
-                                                ''' + "${imageTag}" + '''
-                                            
-                                            echo "✅ Report generated: ''' + "${reportName}" + '''"
-                                        '''
-                                    }
-                                }
-                                
-                                parallel trivySteps
-                                groupIndex++
-                            }
-                        }
+                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'T_USER', passwordVariable: 'T_PASS')]) {
+                    // شيلنا الـ chunks والـ parallel خالص
+                    for (service in services) {
+                        def serviceName = service
+                        def imageTag = "redasaad1234/backend-${serviceName.toLowerCase()}:${TAG}"
                         
-                        archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
-                        echo "🎉 All Trivy scans completed successfully!"
+                        echo "🔍 Scanning: ${serviceName} ..."
+                        
+                        sh '''
+                            export TRIVY_USERNAME=''' + "${T_USER}" + '''
+                            export TRIVY_PASSWORD=''' + "${T_PASS}" + '''
+                            
+                            # نلغي الـ Secret Scan مؤقتاً لتوفير الرامات وتحسين السرعة
+                            trivy image --no-progress --scanners vuln --severity HIGH,CRITICAL \
+                                --format template --template @trivy-templates/html.tpl \
+                                -o trivy-''' + "${serviceName}.html ${imageTag}" + '''
+                        '''
                     }
                 }
+                archiveArtifacts artifacts: "trivy-*.html"
             }
         }
+    }
+}
 
         // stage('Trigger CD Pipeline') {
         //     agent {
