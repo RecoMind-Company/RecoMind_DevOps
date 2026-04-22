@@ -534,8 +534,10 @@ spec:
     tty: true
     resources:
       requests:
-        memory: "1Gi"   # زودنا الرامات شوية عشان الفحص
+        memory: "1Gi"
         cpu: "500m"
+      limits:
+        memory: "2Gi"   # حد أقصى عشان الـ Pod ميكبرش بزيادة ويوقع الـ Node
     volumeMounts:
     - name: workspace-volume
       mountPath: /home/jenkins/agent
@@ -548,12 +550,13 @@ spec:
     steps {
         container('trivy') {
             script {
-                // 1. تحميل قاعدة البيانات مرة واحدة فقط للكل
+                // التأكد من وجود الـ template في الـ Workspace
+                sh "ls -la trivy-templates/html.tpl || echo 'Template not found!'"
+
                 echo "📥 Downloading Trivy DB once..."
                 sh "trivy image --download-db-only"
 
-                // 2. معالجة السيرفس بمعدل هادئ (مثلاً 2 في المرة)
-                int maxParallel = 3 
+                int maxParallel = 2 
                 def chunks = services.collate(maxParallel)
 
                 withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'T_USER', passwordVariable: 'T_PASS')]) {
@@ -562,29 +565,31 @@ spec:
                         for (service in chunk) {
                             def serviceName = service
                             def imageTag = "redasaad1234/backend-${serviceName.toLowerCase()}:${TAG}"
-                            
+                            def reportName = "trivy-${serviceName}.html"
+
                             trivySteps["Scan ${serviceName}"] = {
-                                sh """
-                                    export TRIVY_USERNAME='${T_USER}'
-                                    export TRIVY_PASSWORD='${T_PASS}'
-                                    
-                                    # نستخدم Cache dir منفصل بس الـ DB موحدة
-                                    export TRIVY_CACHE_DIR="/tmp/trivy-cache-${serviceName}"
+                                // استخدام Single Quotes في الـ sh لمنع الـ Interpolation Warning
+                                sh '''
+                                    export TRIVY_USERNAME=''' + "${T_USER}" + '''
+                                    export TRIVY_PASSWORD=''' + "${T_PASS}" + '''
+                                    export TRIVY_CACHE_DIR="/tmp/trivy-cache-''' + "${serviceName}" + '''"
                                     
                                     trivy image --no-progress --severity HIGH,CRITICAL \
                                         --format template --template @trivy-templates/html.tpl \
-                                        -o trivy-${serviceName}.html ${imageTag}
-                                """
+                                        -o ''' + "${reportName} ${imageTag}" + '''
+                                '''
                             }
                         }
                         parallel trivySteps
                     }
                 }
-                archiveArtifacts artifacts: "trivy-*.html"
+                archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
             }
         }
     }
 }
+
+
 
 
 
