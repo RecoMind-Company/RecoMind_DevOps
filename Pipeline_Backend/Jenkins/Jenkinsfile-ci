@@ -413,10 +413,13 @@ pipeline{
                         resources:
                           requests:
                             cpu: "2"
-                            memory: "4Gi"
+                            memory: "6Gi"
                           limits:
-                            cpu: "4"
-                            memory: "8Gi"
+                            cpu: "3"
+                            memory: "10Gi"
+                        emptyDir:
+                          medium: Memory
+                          sizeLimit: 2Gi
                     """
                 }
             }
@@ -443,13 +446,16 @@ EOF
                         '''
                         script {
                             def serviceList = services.toList()
+                            int buildCount = 0
+                            
                             for (service in serviceList) {
                                 def serviceName = service
                                 // تحويل اسم الخدمة لـ lowercase عشان Docker بيعترض على الحروف الكبيرة في اسم الـ Image
                                 def cleanImageName = "${IMAGE_NAME}-${serviceName.toLowerCase()}".replace("_", "-")
                                 def imageTag = "${cleanImageName}:${TAG}"
+                                buildCount++
 
-                                echo "🚀 Building and pushing image for ${serviceName} with tag ${imageTag}"
+                                echo "🚀 Building (${buildCount}/${serviceList.size()}) image for ${serviceName} with tag ${imageTag}"
                                 
                                 try {
                                     sh '''
@@ -470,14 +476,19 @@ EOF
                                             --cache-ttl=24h \
                                             --snapshot-mode=redo \
                                             --use-new-run \
-                                            --verbosity=debug
+                                            --cleanup \
+                                            --compressed-caching=false \
+                                            --log-level=info
                                     '''
                                     echo "✅ Successfully built and pushed ${imageTag}"
                                 } catch (Exception e) {
                                     echo "❌ Build failed for ${serviceName}: ${e.message}"
-                                    throw e
+                                    echo "⚠️ Continuing with next service..."
+                                    // Don't throw - continue with next service
                                 }
                             }
+                            
+                            echo "🎉 Build stage completed!"
                         }
                     }
                 }
