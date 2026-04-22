@@ -442,15 +442,14 @@ pipeline{
 
                                 sh """
                                     /kaniko/executor \
-                                        --context ./${SERVICES_DIR}/${serviceName} \
-                                        --dockerfile ./${SERVICES_DIR}/${serviceName}/Dockerfile \
-                                        --destination ${imageTag} \
-                                        --cache=true \
-                                        --snapshot-mode=time \
-                                        --cache-repo=${IMAGE_NAME}-cache \
-                                        --compressed-caching=false \
-                                        --garbage-collection-strategy=weighted \
-                                        --cache-ttl=24h
+                                    --context ./${SERVICES_DIR}/${serviceName} \
+                                    --dockerfile ./${SERVICES_DIR}/${serviceName}/Dockerfile \
+                                    --destination ${imageTag} \
+                                    --cache=true \
+                                    --snapshot-mode=time \
+                                    --compressed-caching=false \
+                                    --cache-repo=${IMAGE_NAME}-cache \
+                                    --cache-ttl=24h
                                 """
 
                                 echo "✅ Successfully built and pushed ${imageTag}"
