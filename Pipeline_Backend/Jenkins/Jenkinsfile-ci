@@ -519,75 +519,75 @@ pipeline{
         }
 
         stage('Trivy Security Scan') {
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: trivy
-                        image: aquasec/trivy:latest
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
+    agent {
+        kubernetes {
+            yaml """
+            apiVersion: v1
+            kind: Pod
+            spec:
+              containers:
+              - name: trivy
+                image: aquasec/trivy:latest
+                command: ["cat"]
+                tty: true
+            """
+        }
+    }
+    steps {
+        container('trivy') {
+            unstash 'source'
+            // المظلة اللي بتغطي كل الـ Microservices اللي هيتم فحصها
+            withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'TRIVY_USERNAME', passwordVariable: 'TRIVY_PASSWORD')]) {
+                script {
+                    int maxParallel = 2 
+                    def serviceList = services.toList()
+                    def chunks = serviceList.collate(maxParallel)
 
-            steps {
-                container('trivy') {
-                    unstash 'source'
-                    script {
-                        int maxParallel = 2  // الحد الأقصى لعدد scans متوازية
-                        def serviceList = services.toList()  // تحويل Array إلى List
-                        def chunks = serviceList.collate(maxParallel)
+                    int groupIndex = 1
+                    for (chunk in chunks) {
+                        echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
+                        def trivySteps = [:]
 
-                        int groupIndex = 1
-                        for (chunk in chunks) {
-                            echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
+                        for (service in chunk) {
+                            def serviceName = service 
+                            trivySteps["Scan ${serviceName}"] = {
+                                // بناء اسم الـ Image لكل سيرفس لوحدها
+                                def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
+                                def reportName = "trivy-${serviceName}.html"
 
-                            def trivySteps = [:]
+                                echo "🔍 Scanning image: ${imageTag}"
 
-                            for (service in chunk) {
-                                def serviceName = service  // مهم داخل closure
-                                trivySteps["Scan ${serviceName}"] = {
-                                    def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
-                                    def reportName = "trivy-${serviceName}.html"
-
-                                    echo "🔍 Scanning image: ${imageTag}"
-
+                                sh """
+                                    # إعداد صلاحيات الدخول قبل الفحص لكل Image
+                                    export TRIVY_USERNAME=${TRIVY_USERNAME}
+                                    export TRIVY_PASSWORD=${TRIVY_PASSWORD}
                                     
-                                        sh """
-                                            # مسح أي كاش قديم أو تالف
-                                            trivy image --clear-cache
-                                            
-                                            trivy image \
-                                                --no-progress \
-                                                --scanners vuln \
-                                                --severity HIGH,CRITICAL \
-                                                --timeout 20m \
-                                                --format template \
-                                                --template @trivy-templates/html.tpl \
-                                                -o ${reportName} \
-                                                ${imageTag}
-                                        """
+                                    # تنظيف الكاش (الأمر الجديد)
+                                    trivy clean --scan-cache
                                     
-
-                                    echo "📝 Report generated: ${reportName}"
-                                }
+                                    # الفحص الفعلي
+                                    trivy image \
+                                        --no-progress \
+                                        --scanners vuln \
+                                        --severity HIGH,CRITICAL \
+                                        --timeout 20m \
+                                        --format template \
+                                        --template @trivy-templates/html.tpl \
+                                        -o ${reportName} \
+                                        ${imageTag}
+                                """
+                                echo "📝 Report generated: ${reportName}"
                             }
-
-                            parallel trivySteps  // تشغيل المجموعة بشكل parallel
-                            groupIndex++
                         }
-
-                        archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
-                        echo "🎉 All Trivy security scans completed successfully!"
+                        parallel trivySteps
+                        groupIndex++
                     }
+                    archiveArtifacts artifacts: "trivy-*.html", allowEmptyArchive: true
                 }
             }
         }
+    }
+}
 
 
 
