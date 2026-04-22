@@ -412,11 +412,11 @@ pipeline{
                         tty: true
                         resources:
                           requests:
+                              cpu: "200m"        # اطلب 1 كور CPU
                               memory: "2Gi"   # اطلب 2 جيجا رامات
-                              cpu: "500m"        # اطلب 1 كور CPU
                           limits:
+                              cpu: "800m"
                               memory: "2Gi"   # اسمح له يوصل لـ 2 جيجا لو احتاج
-                              cpu: "1"
                         
                     """
                 }
@@ -446,6 +446,7 @@ pipeline{
                                         --dockerfile ./${SERVICES_DIR}/${serviceName}/Dockerfile \
                                         --destination ${imageTag} \
                                         --cache=true \
+                                        --snapshot-mode=time \
                                         --cache-repo=${IMAGE_NAME}-cache \
                                         --cache-ttl=24h
                                 """
