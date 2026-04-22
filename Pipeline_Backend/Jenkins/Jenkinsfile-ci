@@ -591,28 +591,28 @@ pipeline{
 
 
 
-        stage('Trigger CD Pipeline') {
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: shell
-                        image: alpine:latest
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
-            steps {
-                container('shell') {
-                    build job: "Pipeline_Backend_cd", wait: false
-                }
-            }
-        }
+        // stage('Trigger CD Pipeline') {
+        //     agent {
+        //         kubernetes {
+        //             yaml """
+        //             apiVersion: v1
+        //             kind: Pod
+        //             spec:
+        //               containers:
+        //               - name: shell
+        //                 image: alpine:latest
+        //                 command:
+        //                 - cat
+        //                 tty: true
+        //             """
+        //         }
+        //     }
+        //     steps {
+        //         container('shell') {
+        //             build job: "Pipeline_Backend_cd", wait: false
+        //         }
+        //     }
+        // }
 
     }
 }
