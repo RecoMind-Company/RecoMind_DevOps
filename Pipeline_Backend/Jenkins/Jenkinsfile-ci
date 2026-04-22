@@ -566,18 +566,16 @@ pipeline{
                                     export TRIVY_USERNAME=${TRIVY_USERNAME}
                                     export TRIVY_PASSWORD=${TRIVY_PASSWORD}
                                     
-                                    # تنظيف الكاش (الأمر الجديد)
-                                    trivy clean --scan-cache
+                                    export TRIVY_CACHE_DIR="/home/jenkins/agent/trivy-cache-${serviceName}"
                                     
                                     # الفحص الفعلي
                                     trivy image \
                                         --no-progress \
                                         --scanners vuln \
                                         --severity HIGH,CRITICAL \
-                                        --timeout 20m \
                                         --format template \
                                         --template @trivy-templates/html.tpl \
-                                        -o ${reportName} \
+                                        -o trivy-${serviceName}.html \
                                         ${imageTag}
                                 """
                                 echo "📝 Report generated: ${reportName}"
