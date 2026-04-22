@@ -448,6 +448,8 @@ pipeline{
                                         --cache=true \
                                         --snapshot-mode=time \
                                         --cache-repo=${IMAGE_NAME}-cache \
+                                        --compressed-caching=false \
+                                        --garbage-collection-strategy=weighted \
                                         --cache-ttl=24h
                                 """
 
