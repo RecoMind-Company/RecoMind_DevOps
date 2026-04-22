@@ -397,89 +397,89 @@ pipeline{
             }
         }
 
-       stage("Build And Push Image using (kaniko)"){
-    agent {
-        kubernetes {
-            yaml """
-            apiVersion: v1
-            kind: Pod
-            spec:
-              containers:
-              - name: kaniko
-                image: gcr.io/kaniko-project/executor:debug
-                command:
-                - /busybox/sh
-                args:
-                - -c
-                - |
-                   /busybox/cat
-                tty: true
-                workingDir: /workspace
-                resources:
-                  requests:
-                    cpu: "500m"
-                    memory: "1Gi"
-                  limits:
-                    cpu: "1500m"
-                    memory: "4Gi"
-            """
-        }
-    }
-    steps {
-        container('kaniko') {
-            unstash 'source'
+//        stage("Build And Push Image using (kaniko)"){
+//     agent {
+//         kubernetes {
+//             yaml """
+//             apiVersion: v1
+//             kind: Pod
+//             spec:
+//               containers:
+//               - name: kaniko
+//                 image: gcr.io/kaniko-project/executor:debug
+//                 command:
+//                 - /busybox/sh
+//                 args:
+//                 - -c
+//                 - |
+//                    /busybox/cat
+//                 tty: true
+//                 workingDir: /workspace
+//                 resources:
+//                   requests:
+//                     cpu: "500m"
+//                     memory: "1Gi"
+//                   limits:
+//                     cpu: "1500m"
+//                     memory: "4Gi"
+//             """
+//         }
+//     }
+//     steps {
+//         container('kaniko') {
+//             unstash 'source'
 
-            withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                sh '''
-                    # إنشاء ملف الإعدادات في المسار الافتراضي لـ Kaniko
-                    mkdir -p /kaniko/.docker
-                    AUTH=$(echo -n "${DOCKER_USER}:${DOCKER_PASS}" | base64)
-                    cat > /kaniko/.docker/config.json <<EOF
-{
-  "auths": {
-    "https://index.docker.io/v1/": {
-      "auth": "$AUTH"
-    }
-  }
-}
-EOF
-                    echo "✅ Docker config.json created"
-                '''
+//             withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+//                 sh '''
+//                     # إنشاء ملف الإعدادات في المسار الافتراضي لـ Kaniko
+//                     mkdir -p /kaniko/.docker
+//                     AUTH=$(echo -n "${DOCKER_USER}:${DOCKER_PASS}" | base64)
+//                     cat > /kaniko/.docker/config.json <<EOF
+// {
+//   "auths": {
+//     "https://index.docker.io/v1/": {
+//       "auth": "$AUTH"
+//     }
+//   }
+// }
+// EOF
+//                     echo "✅ Docker config.json created"
+//                 '''
                 
-                script {
-                    def serviceList = services.toList()
-                    for (int i = 0; i < serviceList.size(); i++) {
-                        def serviceName = serviceList[i]
-                        def cleanImageName = "${IMAGE_NAME}-${serviceName.toLowerCase()}".replace("_", "-")
-                        def imageTag = "${cleanImageName}:${TAG}"
+//                 script {
+//                     def serviceList = services.toList()
+//                     for (int i = 0; i < serviceList.size(); i++) {
+//                         def serviceName = serviceList[i]
+//                         def cleanImageName = "${IMAGE_NAME}-${serviceName.toLowerCase()}".replace("_", "-")
+//                         def imageTag = "${cleanImageName}:${TAG}"
 
-                        echo "🚀 Building (${i+1}/${serviceList.size()}) for ${serviceName}"
+//                         echo "🚀 Building (${i+1}/${serviceList.size()}) for ${serviceName}"
                         
-                        try {
-                            sh """
-                                /kaniko/executor \
-                                --context ./${SERVICES_DIR}/${serviceName} \
-                                --dockerfile ./${SERVICES_DIR}/${serviceName}/Dockerfile \
-                                --destination ${imageTag} \
-                                --cache=true \
-                                --cache-repo=${IMAGE_NAME}-cache \
-                                --cache-ttl=24h \
-                                --snapshot-mode=redo \
-                                --use-new-run \
-                                --cleanup \
-                                --compressed-caching=false \
-                                --verbosity=info
-                            """
-                            echo "✅ Successfully built and pushed ${imageTag}"
-                        } catch (Exception e) {
-                            echo "❌ Build failed for ${serviceName}: ${e.message}"
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+//                         try {
+//                             sh """
+//                                 /kaniko/executor \
+//                                 --context ./${SERVICES_DIR}/${serviceName} \
+//                                 --dockerfile ./${SERVICES_DIR}/${serviceName}/Dockerfile \
+//                                 --destination ${imageTag} \
+//                                 --cache=true \
+//                                 --cache-repo=${IMAGE_NAME}-cache \
+//                                 --cache-ttl=24h \
+//                                 --snapshot-mode=redo \
+//                                 --use-new-run \
+//                                 --cleanup \
+//                                 --compressed-caching=false \
+//                                 --verbosity=info
+//                             """
+//                             echo "✅ Successfully built and pushed ${imageTag}"
+//                         } catch (Exception e) {
+//                             echo "❌ Build failed for ${serviceName}: ${e.message}"
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
 
 
 
@@ -557,17 +557,22 @@ EOF
 
                                     echo "🔍 Scanning image: ${imageTag}"
 
-                                    sh """
-                                        trivy image \
-                                            --scanners vuln \
-                                            --severity HIGH,CRITICAL \
-                                            --timeout 20m \
-                                            --exit-code 0 \
-                                            --format template \
-                                            --template trivy-templates/html.tpl \
-                                            -o ${reportName} \
-                                            ${imageTag}
-                                    """
+                                    
+                                        sh """
+                                            # مسح أي كاش قديم أو تالف
+                                            trivy image --clear-cache
+                                            
+                                            trivy image \
+                                                --no-progress \
+                                                --scanners vuln \
+                                                --severity HIGH,CRITICAL \
+                                                --timeout 20m \
+                                                --format template \
+                                                --template @trivy-templates/html.tpl \
+                                                -o ${reportName} \
+                                                ${imageTag}
+                                        """
+                                    
 
                                     echo "📝 Report generated: ${reportName}"
                                 }
