@@ -408,11 +408,13 @@ pipeline{
               - name: kaniko
                 image: gcr.io/kaniko-project/executor:debug
                 command:
-                - /busybox/cat
+                - /busybox/sh
+                args:
+                - -c
+                - |
+                   /busybox/cat
                 tty: true
-                env:
-                - name: DOCKER_CONFIG
-                  value: /kaniko/.docker/
+                workingDir: /workspace
                 resources:
                   requests:
                     cpu: "500m"
