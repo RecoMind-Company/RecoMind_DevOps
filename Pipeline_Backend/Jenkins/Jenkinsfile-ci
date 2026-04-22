@@ -513,7 +513,9 @@ pipeline{
                     sh '''
                         mkdir -p trivy-templates
                         wget -q https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -O trivy-templates/html.tpl
+
                     '''
+                    stash name: 'trivy-tpl', includes: 'trivy-templates/html.tpl'
                 }
             }
         }
@@ -530,12 +532,19 @@ pipeline{
                 image: aquasec/trivy:latest
                 command: ["cat"]
                 tty: true
+                volumeMounts:
+                - name: jenkins-workspace
+                mountPath: /home/jenkins/agent  # ده المسار الافتراضي للـ workspace في jenkins
+            volumes:
+            - name: jenkins-workspace
+                emptyDir: {}
             """
         }
     }
     steps {
         container('trivy') {
             unstash 'source'
+            unstash 'trivy-tpl'
             // المظلة اللي بتغطي كل الـ Microservices اللي هيتم فحصها
             withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'TRIVY_USERNAME', passwordVariable: 'TRIVY_PASSWORD')]) {
                 script {
