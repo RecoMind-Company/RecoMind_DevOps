@@ -412,12 +412,11 @@ pipeline{
                         tty: true
                         resources:
                           requests:
-                              cpu: "200m"        # اطلب 1 كور CPU
-                              memory: "2Gi"   # اطلب 2 جيجا رامات
+                            cpu: "500m"
+                            memory: "1Gi"
                           limits:
-                              cpu: "800m"
-                              memory: "2Gi"   # اسمح له يوصل لـ 2 جيجا لو احتاج
-                        
+                            cpu: "1"
+                            memory: "2Gi"
                     """
                 }
             }
@@ -436,20 +435,23 @@ pipeline{
                             def serviceList = services.toList()
                             for (service in serviceList) {
                                 def serviceName = service
-                                def imageTag = "${IMAGE_NAME}-${serviceName.toLowerCase()}:${TAG}"
+                                // تحويل اسم الخدمة لـ lowercase عشان Docker بيعترض على الحروف الكبيرة في اسم الـ Image
+                                def cleanImageName = "${IMAGE_NAME}-${serviceName.toLowerCase()}".replace("_", "-")
+                                def imageTag = "${cleanImageName}:${TAG}"
 
                                 echo "🚀 Building and pushing image for ${serviceName} with tag ${imageTag}"
 
+                                // استخدام --snapshot-mode=redo لضمان دقة الـ Build في دوت نت
                                 sh """
                                     /kaniko/executor \
                                     --context ./${SERVICES_DIR}/${serviceName} \
                                     --dockerfile ./${SERVICES_DIR}/${serviceName}/Dockerfile \
                                     --destination ${imageTag} \
                                     --cache=true \
-                                    --snapshot-mode=time \
-                                    --compressed-caching=false \
                                     --cache-repo=${IMAGE_NAME}-cache \
-                                    --cache-ttl=24h
+                                    --cache-ttl=24h \
+                                    --snapshot-mode=redo \
+                                    --use-new-run
                                 """
 
                                 echo "✅ Successfully built and pushed ${imageTag}"
