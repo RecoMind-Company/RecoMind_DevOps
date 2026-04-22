@@ -553,7 +553,7 @@ spec:
                 sh "trivy image --download-db-only"
 
                 // 2. معالجة السيرفس بمعدل هادئ (مثلاً 2 في المرة)
-                int maxParallel = 2 
+                int maxParallel = 3 
                 def chunks = services.collate(maxParallel)
 
                 withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'T_USER', passwordVariable: 'T_PASS')]) {
