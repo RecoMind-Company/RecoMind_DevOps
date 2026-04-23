@@ -9,6 +9,15 @@ image:
   tag: "1.0.0"
   pullPolicy: IfNotPresent
 
+volumes:
+  - name: secrets-store
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: app-secrets
+
+
 virtualService:
   enabled: true
 
@@ -55,3 +64,9 @@ env:
       configMapKeyRef:
         name: recomind-config
         key: jwt-Expire
+
+  - name: JwtOptions__SecretKey
+    valueFrom:
+      secretKeyRef:
+        name: app-secrets
+        key: Jwt-SecretKey

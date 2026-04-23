@@ -3,7 +3,9 @@ nameOverride: "recomind"
 fullnameOverride: "recomind"
 global:
   imagePullSecrets:
-    - name: registry-secret
+    - name: dockerhub-secret
+
+  
   ConfigMap:
     enabled: true
     name: recomind-config

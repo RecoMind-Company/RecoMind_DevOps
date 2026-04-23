@@ -8,162 +8,68 @@ pipeline{
 
     }
 
-    stages {
-
-
-
-        stage('Get Artifacts from Pipeline Infrastructure') {
-            steps {
-                copyArtifacts(
-                    projectName: 'Pipline_Infrastructure',
-                    fingerprintArtifacts: true,
-                    selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
-                )
-            }
-        }
-        
-        
-        stage('Get Artifacts from Pipeline Backend CI') {
-            steps {
-                copyArtifacts(
-                    projectName: 'Pipeline_Backend_ci',
-                    fingerprintArtifacts: true,
-                    filter: 'services.txt',
-                    selector: lastSuccessful(stable: false)  // أو true حسب الحاجة
-                )
-            }
-        }
-
-        stage('Discover Microservices') {
-            steps {
-                    script {
-                    services = readFile('services.txt').trim().split("\n").collect { it.toLowerCase() }
-                    echo "🔍 Found services: ${services}"
-                }
-
-            }
-        }
-        
-
-        
-    
-
-        stage('Add Ip or Domain to Ansible Defaults') {
-            steps {
-                script {
-                    def publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_BackendVmServer/outputs/server_ip.txt').trim()
-                    sh """
-                    sed -i "s/^server_domain_or_IP:.*/server_domain_or_IP: '${publicIp}'/" Pipline_Backend/ansible/Roles/defaults/main.yml
-                    """
-
-                }
-            }
-        }
-
-
-
-        stage('connect to backend Server ') {
-            
-            steps {
-                withCredentials([
-                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
-                ]) {
-                    script{
-                        env.publicIp = readFile('Pipline_infrastructure/Terraform/Terraform_BackendVmServer/outputs/server_ip.txt').trim()
-                        env.server_name = readFile('Pipline_infrastructure/Terraform/Terraform_BackendVmServer/outputs/server_Name.txt').trim()
-
-                        sh '''
-                        echo "Testing SSH connection to ${ipToUse}"
-                        ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "echo Connected successfully"
-                        '''
-
-                    }
-
-                    
-                }
-            }
-
-            
-        }
-
-        stage('create Ansible inventory file') {
-            steps {
-                dir('Pipline_Backend/ansible') {
-                    sh """
-                    rm -f ansible_inventory.ini
-                    echo "[all]" | tee ansible_inventory.ini
-                    echo "server ansible_host=${publicIp} ansible_user=${server_Name} ansible_ssh_private_key_file=/var/lib/jenkins/.ssh/id_rsa" | tee -a ansible_inventory.ini
-                    cat ansible_inventory.ini
+    stages{
+        stage("checkout Source code") {
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: git
+                        image: alpine/git:latest
+                        command:
+                        - cat
+                        tty: true
                     """
                 }
             }
+            steps {
+                container('git') {
+                    git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
+                    stash name: 'source', includes: '**/*'
+                }
+                   
+               
+            }
         }
 
+        stage("Create the secrets for pull image in Helm chart ") {
+
+            withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', passwordVariable: 'DOCKERHUB_PSW', usernameVariable: 'DOCKERHUB_USR')]) {
+                steps {
+
+                    sh '''
+                        echo "Creating Kubernetes secret for Docker Hub authentication..."
+                        kubectl create secret docker-registry dockerhub-secret \
+                        --docker-server=https://index.docker.io/v1/ \
+                        --docker-username=$DOCKERHUB_USR \
+                        --docker-password=$DOCKERHUB_PSW \
+                        --docker-email=redasaad010260@gamil.com \
+                        --namespace=default \
+                        --dry-run=client -o yaml | kubectl apply -f -
+                    '''
 
 
-        stage('Run Ansible Playbook') {
-            steps {
-                dir('Pipline_Backend/ansible') {
-                    sh 'ansible-playbook -i ansible_inventory.ini Playbook-cd.yml '
                 }
             }
         }
 
 
-        stage('stop Docker Container on AI Server') {
+        stage("Deploy to Kubernetes with Helm") {
             steps {
-                withCredentials([
-                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
-                ]) {
-                    sh '''
-                    echo "Running Docker Container on AI Server"
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
-                        docker compose -f docker-compose.yml down --volumes --remove-orphans || true 
-                    "
-                    '''
-                }
+                unstash 'source'
+                sh '''
+                    echo "Deploying application to Kubernetes using Helm..."
+                    helm upgrade --install recomind ./Helm/Platform --namespace default
+                '''
             }
         }
-
-
-
-        stage('pull Docker Image on AI Server') {
-            steps {
-                withCredentials([
-                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER'),
-                    usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')
-                ]) {
-                    sh '''
-
-                    echo "Pulling Docker Image on AI Server"
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
-                        docker login -u $DOCKERHUB_USR -p $DOCKERHUB_PSW &&
-                        docker compose pull "
-                    '''
-                }
-            }
-        }
-
-        
-
-
-        stage('start Docker Container on AI Server') {
-            steps {
-                withCredentials([
-                    sshUserPrivateKey(credentialsId: 'SSH_USER', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')
-                ]) {
-                    sh '''
-                    echo "Running Docker Container on AI Server"
-                    ssh -T -o StrictHostKeyChecking=no -i "$SSH_KEY_FILE" ${server_name}@${publicIp} "
-                        docker compose -f docker-compose.yml up -d
-                    "
-                    '''
-                }   
-            }
-        }
-
-
     }
+
+
+
 
 }  
 
