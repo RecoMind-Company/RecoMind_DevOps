@@ -57,6 +57,7 @@ pipeline{
             steps {
                 unstash 'source'
                 sh '''
+                    cd Pipeline_Backend
                     echo "Deploying application to Kubernetes using Helm..."
                     helm upgrade --install recomind ./Helm/Platform --namespace default
                 '''
