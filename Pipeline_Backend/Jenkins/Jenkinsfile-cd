@@ -43,6 +43,14 @@ pipeline{
             steps {
                 withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', passwordVariable: 'DOCKERHUB_PSW', usernameVariable: 'DOCKERHUB_USR')]) {
                     sh '''
+
+                        az login --service-principal \
+                        -u $AZURE_CLIENT_ID \
+                        -p $AZURE_CLIENT_SECRET \
+                        --tenant $AZURE_TENANT_ID
+
+                        
+
                         az aks get-credentials \
                         --resource-group aks-rg-Recomind \
                         --name Recomind-aks \
