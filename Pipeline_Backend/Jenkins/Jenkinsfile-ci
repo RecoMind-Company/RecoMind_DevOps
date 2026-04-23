@@ -92,285 +92,285 @@ pipeline{
         }
 
 
-        // stage("Restore"){
-        //     agent {
-        //         kubernetes {
-        //             yaml """
-        //             apiVersion: v1
-        //             kind: Pod
-        //             spec:
-        //               containers:
-        //               - name: dotnet
-        //                 image: mcr.microsoft.com/dotnet/sdk:8.0
-        //                 command:
-        //                 - cat
-        //                 tty: true
-        //             """
-        //         }
-        //     }
+        stage("Restore"){
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: dotnet
+                        image: mcr.microsoft.com/dotnet/sdk:8.0
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
 
-        //     steps {
-        //         container('dotnet') {
-        //             unstash 'source'
-        //             script {
-        //                 int maxParallel = 3  // الحد الأقصى لعدد restores متوازية
-        //                 def serviceList = services.toList()  // تحويل Array إلى List
-        //                 def chunks = serviceList.collate(maxParallel)
+            steps {
+                container('dotnet') {
+                    unstash 'source'
+                    script {
+                        int maxParallel = 3  // الحد الأقصى لعدد restores متوازية
+                        def serviceList = services.toList()  // تحويل Array إلى List
+                        def chunks = serviceList.collate(maxParallel)
 
-        //                 int groupIndex = 1
-        //                 for (chunk in chunks) {
-        //                     echo "➡️ Restoring group ${groupIndex}/${chunks.size()} in parallel..."
+                        int groupIndex = 1
+                        for (chunk in chunks) {
+                            echo "➡️ Restoring group ${groupIndex}/${chunks.size()} in parallel..."
 
-        //                     def restoreSteps = [:]
+                            def restoreSteps = [:]
 
-        //                     for (service in chunk) {
-        //                         def serviceName = service  // مهم داخل closure
-        //                         restoreSteps["Restore ${serviceName}"] = {
-        //                             sh """
-        //                             cd ${SERVICES_DIR}/${serviceName}
+                            for (service in chunk) {
+                                def serviceName = service  // مهم داخل closure
+                                restoreSteps["Restore ${serviceName}"] = {
+                                    sh """
+                                    cd ${SERVICES_DIR}/${serviceName}
 
-        //                             sln=\$(find . -name "*.sln" | head -n 1)
+                                    sln=\$(find . -name "*.sln" | head -n 1)
 
-        //                             echo "📦 Restoring: \$sln"
-        //                             dotnet restore \$sln
-        //                             """
-        //                         }
-        //                     }
+                                    echo "📦 Restoring: \$sln"
+                                    dotnet restore \$sln
+                                    """
+                                }
+                            }
 
-        //                     parallel restoreSteps  // تشغيل المجموعة بشكل parallel
-        //                     groupIndex++
-        //                 }
+                            parallel restoreSteps  // تشغيل المجموعة بشكل parallel
+                            groupIndex++
+                        }
 
-        //                 echo "🎉 All services have been restored successfully!"
-        //             }
-        //         }
-        //     }
-        // }
+                        echo "🎉 All services have been restored successfully!"
+                    }
+                }
+            }
+        }
 
 
 
-        // stage("Build"){
-        //     agent {
-        //         kubernetes {
-        //             yaml """
-        //             apiVersion: v1
-        //             kind: Pod
-        //             spec:
-        //               containers:
-        //               - name: dotnet
-        //                 image: mcr.microsoft.com/dotnet/sdk:8.0
-        //                 command:
-        //                 - cat
-        //                 tty: true
-        //             """
-        //         }
-        //     }
+        stage("Build"){
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: dotnet
+                        image: mcr.microsoft.com/dotnet/sdk:8.0
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
 
-        //     steps {
-        //         container('dotnet') {
-        //             unstash 'source'
-        //             script {
-        //                 int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
-        //                 def serviceList = services.toList()  // تحويل Array إلى List
-        //                 def chunks = serviceList.collate(maxParallel)
+            steps {
+                container('dotnet') {
+                    unstash 'source'
+                    script {
+                        int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
+                        def serviceList = services.toList()  // تحويل Array إلى List
+                        def chunks = serviceList.collate(maxParallel)
 
-        //                 int groupIndex = 1
-        //                 for (chunk in chunks) {
-        //                     echo "➡️ Building group ${groupIndex}/${chunks.size()} in parallel..."
+                        int groupIndex = 1
+                        for (chunk in chunks) {
+                            echo "➡️ Building group ${groupIndex}/${chunks.size()} in parallel..."
 
-        //                     def buildSteps = [:]
+                            def buildSteps = [:]
 
-        //                     for (service in chunk) {
-        //                         def serviceName = service  // مهم داخل closure
-        //                         buildSteps["Build ${serviceName}"] = {
-        //                             sh """
-        //                             cd ${SERVICES_DIR}/${serviceName}
+                            for (service in chunk) {
+                                def serviceName = service  // مهم داخل closure
+                                buildSteps["Build ${serviceName}"] = {
+                                    sh """
+                                    cd ${SERVICES_DIR}/${serviceName}
 
-        //                             sln=\$(find . -name "*.sln" | head -n 1)
+                                    sln=\$(find . -name "*.sln" | head -n 1)
 
-        //                             echo "� Building: \$sln"
-        //                             dotnet build \$sln -c Release
-        //                             """
-        //                             echo "✅ Built: ${serviceName}"
-        //                         }
-        //                     }
+                                    echo "� Building: \$sln"
+                                    dotnet build \$sln -c Release
+                                    """
+                                    echo "✅ Built: ${serviceName}"
+                                }
+                            }
 
-        //                     parallel buildSteps  // تشغيل المجموعة بشكل parallel
-        //                     groupIndex++
-        //                 }
+                            parallel buildSteps  // تشغيل المجموعة بشكل parallel
+                            groupIndex++
+                        }
 
-        //                 echo "🎉 All services have been built successfully!"
-        //             }
-        //         }
-        //     }
-        // }
+                        echo "🎉 All services have been built successfully!"
+                    }
+                }
+            }
+        }
 
         
 
 
-        // stage('OWASP Dependency Check') {
+        stage('OWASP Dependency Check') {
 
-        //     agent {
-        //         kubernetes {
-        //             yaml """
-        //             apiVersion: v1
-        //             kind: Pod
-        //             spec:
-        //               containers:
-        //               - name: dependency-check
-        //                 image: owasp/dependency-check:latest
-        //                 command:
-        //                 - cat
-        //                 tty: true
-        //             """
-        //         }
-        //     }
-        //     steps {
-        //         container('dependency-check') {
-        //             unstash 'source'
-        //             script {
-        //             def reportDir = 'dependency-report'
-        //             sh "mkdir -p ${reportDir}"
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: dependency-check
+                        image: owasp/dependency-check:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
+            steps {
+                container('dependency-check') {
+                    unstash 'source'
+                    script {
+                    def reportDir = 'dependency-report'
+                    sh "mkdir -p ${reportDir}"
 
-        //             int maxParallel = 2  // الحد الأقصى لعدد scans متوازية (أقل من Restore/Build لأنها ثقيلة)
-        //             def serviceList = services.toList()  // تحويل Array إلى List
-        //             def chunks = serviceList.collate(maxParallel)
+                    int maxParallel = 2  // الحد الأقصى لعدد scans متوازية (أقل من Restore/Build لأنها ثقيلة)
+                    def serviceList = services.toList()  // تحويل Array إلى List
+                    def chunks = serviceList.collate(maxParallel)
 
-        //             int groupIndex = 1
-        //             for (chunk in chunks) {
-        //                 echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
+                    int groupIndex = 1
+                    for (chunk in chunks) {
+                        echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
 
-        //                 def scanSteps = [:]
+                        def scanSteps = [:]
 
-        //                 for (service in chunk) {
-        //                     def serviceName = service  // مهم داخل closure
-        //                     scanSteps["Scan ${serviceName}"] = {
-        //                         def servicePath = "${SERVICES_DIR}/${serviceName}"
-        //                         def reportPath = "${reportDir}/dependency-check-${serviceName}.html"
+                        for (service in chunk) {
+                            def serviceName = service  // مهم داخل closure
+                            scanSteps["Scan ${serviceName}"] = {
+                                def servicePath = "${SERVICES_DIR}/${serviceName}"
+                                def reportPath = "${reportDir}/dependency-check-${serviceName}.html"
 
-        //                         echo "🔍 Running OWASP Dependency Check for ${serviceName}..."
+                                echo "🔍 Running OWASP Dependency Check for ${serviceName}..."
 
-        //                         echo 'Running OWASP Dependency Check...'
-        //                         sh 'mkdir -p dependency-check-report'
-        //                         dependencyCheck additionalArguments: '--format HTML --out dependency-check-report --scan ${serviceName}  --data ${DEPENDENCY_CHECK_DATA} --nvdApiKey ${NVD_API_KEY} ', odcInstallation: 'OWASP-Dependency'
+                                echo 'Running OWASP Dependency Check...'
+                                sh 'mkdir -p dependency-check-report'
+                                dependencyCheck additionalArguments: '--format HTML --out dependency-check-report --scan ${serviceName}  --data ${DEPENDENCY_CHECK_DATA} --nvdApiKey ${NVD_API_KEY} ', odcInstallation: 'OWASP-Dependency'
 
-        //                         echo "📝 Report generated: ${reportPath}"
-        //                     }
-        //                 }
+                                echo "📝 Report generated: ${reportPath}"
+                            }
+                        }
 
-        //                 parallel scanSteps  // تشغيل المجموعة بشكل parallel
-        //                 groupIndex++
-        //             }
+                        parallel scanSteps  // تشغيل المجموعة بشكل parallel
+                        groupIndex++
+                    }
 
-        //             echo "🎉 All OWASP Dependency Checks completed successfully!"
-        //             }
+                    echo "🎉 All OWASP Dependency Checks completed successfully!"
+                    }
                 
             
-        //         }
-        //     }
-        // }
+                }
+            }
+        }
 
-        // stage('Archive Dependency Report') {
-        //     agent {
-        //         kubernetes {
-        //             yaml """
-        //             apiVersion: v1
-        //             kind: Pod
-        //             spec:
-        //               containers:
-        //               - name: shell
-        //                 image: alpine:latest
-        //                 command:
-        //                 - cat
-        //                 tty: true
-        //             """
-        //         }
-        //     }
-        //     steps {
-        //         container('shell') {
-        //             archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
-        //         }
-        //     }
-        // }
+        stage('Archive Dependency Report') {
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: shell
+                        image: alpine:latest
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
+            steps {
+                container('shell') {
+                    archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
+                }
+            }
+        }
 
 
-        // stage('SonarQube Analysis') {
-        //     agent {
-        //         kubernetes {
-        //             yaml """
-        //             apiVersion: v1
-        //             kind: Pod
-        //             spec:
-        //               containers:
-        //               - name: dotnet
-        //                 image: mcr.microsoft.com/dotnet/sdk:8.0
-        //                 command:
-        //                 - cat
-        //                 tty: true
-        //               - name: java
-        //                 image: eclipse-temurin:17-jdk
-        //                 command: ["cat"]
-        //                 tty: true 
-        //             """
-        //         }
-        //     }
-        //     steps {
-        //         container('dotnet') {
-        //             unstash 'source'
-        //             withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN_SECURE')]) {
-        //                 script {
-        //                     int maxParallel = 2
-        //                     def serviceList = services.toList()
-        //                     def chunks = serviceList.collate(maxParallel)
+        stage('SonarQube Analysis') {
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: dotnet
+                        image: mcr.microsoft.com/dotnet/sdk:8.0
+                        command:
+                        - cat
+                        tty: true
+                      - name: java
+                        image: eclipse-temurin:17-jdk
+                        command: ["cat"]
+                        tty: true 
+                    """
+                }
+            }
+            steps {
+                container('dotnet') {
+                    unstash 'source'
+                    withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN_SECURE')]) {
+                        script {
+                            int maxParallel = 2
+                            def serviceList = services.toList()
+                            def chunks = serviceList.collate(maxParallel)
 
-        //                     int groupIndex = 1
-        //                     for (chunk in chunks) {
-        //                         echo "➡️ Analyzing group ${groupIndex}/${chunks.size()} in parallel..."
+                            int groupIndex = 1
+                            for (chunk in chunks) {
+                                echo "➡️ Analyzing group ${groupIndex}/${chunks.size()} in parallel..."
 
-        //                         def analysisSteps = [:]
+                                def analysisSteps = [:]
 
-        //                         for (service in chunk) {
-        //                             def serviceName = service
-        //                             analysisSteps["Analyze ${serviceName}"] = {
-        //                                 sh """
-        //                                     export PATH="\$PATH:/root/.dotnet/tools"
-        //                                     cd ${SERVICES_DIR}/${serviceName}
+                                for (service in chunk) {
+                                    def serviceName = service
+                                    analysisSteps["Analyze ${serviceName}"] = {
+                                        sh """
+                                            export PATH="\$PATH:/root/.dotnet/tools"
+                                            cd ${SERVICES_DIR}/${serviceName}
 
-        //                                     # Find .csproj file
-        //                                     csproj=\$(find . -name "*.csproj" -type f | head -n 1)
+                                            # Find .csproj file
+                                            csproj=\$(find . -name "*.csproj" -type f | head -n 1)
 
-        //                                     if [ -z "\$csproj" ]; then
-        //                                         echo "❌ No .csproj found in ${serviceName}"
-        //                                         exit 1
-        //                                     fi
+                                            if [ -z "\$csproj" ]; then
+                                                echo "❌ No .csproj found in ${serviceName}"
+                                                exit 1
+                                            fi
 
-        //                                     dotnet tool install --global dotnet-sonarscanner || true
+                                            dotnet tool install --global dotnet-sonarscanner || true
 
-        //                                     dotnet sonarscanner begin \\
-        //                                     /k:"recomind-${serviceName}" \\
-        //                                     /o:"recomind-company" \\
-        //                                     /d:sonar.host.url="https://sonarcloud.io" \\
-        //                                     /d:sonar.token="${SONAR_TOKEN}"
+                                            dotnet sonarscanner begin \\
+                                            /k:"recomind-${serviceName}" \\
+                                            /o:"recomind-company" \\
+                                            /d:sonar.host.url="https://sonarcloud.io" \\
+                                            /d:sonar.token="${SONAR_TOKEN}"
 
-        //                                     dotnet build "\$csproj" -c Release
+                                            dotnet build "\$csproj" -c Release
 
-        //                                     dotnet sonarscanner end \\
-        //                                     /d:sonar.token="${SONAR_TOKEN}"
-        //                                 """
-        //                                 echo "✅ SonarQube analysis completed for: ${serviceName}"
-        //                             }
-        //                         }
+                                            dotnet sonarscanner end \\
+                                            /d:sonar.token="${SONAR_TOKEN}"
+                                        """
+                                        echo "✅ SonarQube analysis completed for: ${serviceName}"
+                                    }
+                                }
 
-        //                         parallel analysisSteps
-        //                         groupIndex++
-        //                     }
+                                parallel analysisSteps
+                                groupIndex++
+                            }
 
-        //                     echo "🎉 All SonarQube analyses completed successfully!"
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+                            echo "🎉 All SonarQube analyses completed successfully!"
+                        }
+                    }
+                }
+            }
+        }
 
 
         stage('Achieve Services List') {
@@ -397,89 +397,89 @@ pipeline{
             }
         }
 
-//        stage("Build And Push Image using (kaniko)"){
-//     agent {
-//         kubernetes {
-//             yaml """
-//             apiVersion: v1
-//             kind: Pod
-//             spec:
-//               containers:
-//               - name: kaniko
-//                 image: gcr.io/kaniko-project/executor:debug
-//                 command:
-//                 - /busybox/sh
-//                 args:
-//                 - -c
-//                 - |
-//                    /busybox/cat
-//                 tty: true
-//                 workingDir: /workspace
-//                 resources:
-//                   requests:
-//                     cpu: "500m"
-//                     memory: "1Gi"
-//                   limits:
-//                     cpu: "1500m"
-//                     memory: "4Gi"
-//             """
-//         }
-//     }
-//     steps {
-//         container('kaniko') {
-//             unstash 'source'
+       stage("Build And Push Image using (kaniko)"){
+    agent {
+        kubernetes {
+            yaml """
+            apiVersion: v1
+            kind: Pod
+            spec:
+              containers:
+              - name: kaniko
+                image: gcr.io/kaniko-project/executor:debug
+                command:
+                - /busybox/sh
+                args:
+                - -c
+                - |
+                   /busybox/cat
+                tty: true
+                workingDir: /workspace
+                resources:
+                  requests:
+                    cpu: "500m"
+                    memory: "1Gi"
+                  limits:
+                    cpu: "1500m"
+                    memory: "4Gi"
+            """
+        }
+    }
+    steps {
+        container('kaniko') {
+            unstash 'source'
 
-//             withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-//                 sh '''
-//                     # إنشاء ملف الإعدادات في المسار الافتراضي لـ Kaniko
-//                     mkdir -p /kaniko/.docker
-//                     AUTH=$(echo -n "${DOCKER_USER}:${DOCKER_PASS}" | base64)
-//                     cat > /kaniko/.docker/config.json <<EOF
-// {
-//   "auths": {
-//     "https://index.docker.io/v1/": {
-//       "auth": "$AUTH"
-//     }
-//   }
-// }
-// EOF
-//                     echo "✅ Docker config.json created"
-//                 '''
+            withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                sh '''
+                    # إنشاء ملف الإعدادات في المسار الافتراضي لـ Kaniko
+                    mkdir -p /kaniko/.docker
+                    AUTH=$(echo -n "${DOCKER_USER}:${DOCKER_PASS}" | base64)
+                    cat > /kaniko/.docker/config.json <<EOF
+{
+  "auths": {
+    "https://index.docker.io/v1/": {
+      "auth": "$AUTH"
+    }
+  }
+}
+EOF
+                    echo "✅ Docker config.json created"
+                '''
                 
-//                 script {
-//                     def serviceList = services.toList()
-//                     for (int i = 0; i < serviceList.size(); i++) {
-//                         def serviceName = serviceList[i]
-//                         def cleanImageName = "${IMAGE_NAME}-${serviceName.toLowerCase()}".replace("_", "-")
-//                         def imageTag = "${cleanImageName}:${TAG}"
+                script {
+                    def serviceList = services.toList()
+                    for (int i = 0; i < serviceList.size(); i++) {
+                        def serviceName = serviceList[i]
+                        def cleanImageName = "${IMAGE_NAME}-${serviceName.toLowerCase()}".replace("_", "-")
+                        def imageTag = "${cleanImageName}:${TAG}"
 
-//                         echo "🚀 Building (${i+1}/${serviceList.size()}) for ${serviceName}"
+                        echo "🚀 Building (${i+1}/${serviceList.size()}) for ${serviceName}"
                         
-//                         try {
-//                             sh """
-//                                 /kaniko/executor \
-//                                 --context ./${SERVICES_DIR}/${serviceName} \
-//                                 --dockerfile ./${SERVICES_DIR}/${serviceName}/Dockerfile \
-//                                 --destination ${imageTag} \
-//                                 --cache=true \
-//                                 --cache-repo=${IMAGE_NAME}-cache \
-//                                 --cache-ttl=24h \
-//                                 --snapshot-mode=redo \
-//                                 --use-new-run \
-//                                 --cleanup \
-//                                 --compressed-caching=false \
-//                                 --verbosity=info
-//                             """
-//                             echo "✅ Successfully built and pushed ${imageTag}"
-//                         } catch (Exception e) {
-//                             echo "❌ Build failed for ${serviceName}: ${e.message}"
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
+                        try {
+                            sh """
+                                /kaniko/executor \
+                                --context ./${SERVICES_DIR}/${serviceName} \
+                                --dockerfile ./${SERVICES_DIR}/${serviceName}/Dockerfile \
+                                --destination ${imageTag} \
+                                --cache=true \
+                                --cache-repo=${IMAGE_NAME}-cache \
+                                --cache-ttl=24h \
+                                --snapshot-mode=redo \
+                                --use-new-run \
+                                --cleanup \
+                                --compressed-caching=false \
+                                --verbosity=info
+                            """
+                            echo "✅ Successfully built and pushed ${imageTag}"
+                        } catch (Exception e) {
+                            echo "❌ Build failed for ${serviceName}: ${e.message}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 
