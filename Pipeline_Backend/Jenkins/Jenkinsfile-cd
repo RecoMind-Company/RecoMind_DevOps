@@ -8,7 +8,8 @@ pipeline{
 
     }
 
-    stages{
+    st
+    ages{
         stage("checkout Source code") {
             agent {
                 kubernetes {
@@ -36,10 +37,8 @@ pipeline{
         }
 
         stage("Create the secrets for pull image in Helm chart ") {
-
-            withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', passwordVariable: 'DOCKERHUB_PSW', usernameVariable: 'DOCKERHUB_USR')]) {
-                steps {
-
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', passwordVariable: 'DOCKERHUB_PSW', usernameVariable: 'DOCKERHUB_USR')]) {
                     sh '''
                         echo "Creating Kubernetes secret for Docker Hub authentication..."
                         kubectl create secret docker-registry dockerhub-secret \
@@ -50,8 +49,6 @@ pipeline{
                         --namespace=default \
                         --dry-run=client -o yaml | kubectl apply -f -
                     '''
-
-
                 }
             }
         }
