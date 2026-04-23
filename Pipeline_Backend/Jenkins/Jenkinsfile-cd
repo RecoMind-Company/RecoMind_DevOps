@@ -8,8 +8,7 @@ pipeline{
 
     }
 
-    st
-    ages{
+    stages{
         stage("checkout Source code") {
             agent {
                 kubernetes {
