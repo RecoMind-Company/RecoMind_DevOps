@@ -5,8 +5,8 @@ fullnameOverride: "recomind"
 replicaCount: 2
 
 image:
-  repository: recomind/auth-service
-  tag: "1.0.0"
+  repository: redasaad1234/backend-authenticationservice
+  tag: latest
   pullPolicy: IfNotPresent
 
 volumes:
