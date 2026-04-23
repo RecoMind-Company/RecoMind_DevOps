@@ -65,7 +65,7 @@ StorageClass:
   reclaimPolicy: Retain
 
 ClusterIssuer:
-  enabled: true
+  enabled: false
   name: letsencrypt-prod
   server: https://acme-v02.api.letsencrypt.org/directory
   email: redasaad010260@gmail.com
