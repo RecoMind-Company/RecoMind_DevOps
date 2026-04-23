@@ -332,31 +332,34 @@ pipeline{
                                 for (service in chunk) {
                                     def serviceName = service
                                     analysisSteps["Analyze ${serviceName}"] = {
-                                        sh """
-                                            export PATH="\$PATH:/root/.dotnet/tools"
-                                            cd ${SERVICES_DIR}/${serviceName}
+                                        sh '''
+                                        export PATH="$PATH:/root/.dotnet/tools"
+                                        cd ${SERVICES_DIR}/${serviceName}
 
-                                            # Find .csproj file
-                                            csproj=\$(find . -name "*.csproj" -type f | head -n 1)
+                                        # Find .csproj file
+                                        csproj=$(find . -name "*.csproj" -type f | head -n 1)
 
-                                            if [ -z "\$csproj" ]; then
-                                                echo "❌ No .csproj found in ${serviceName}"
-                                                exit 1
-                                            fi
+                                        if [ -z "$csproj" ]; then
+                                            echo "❌ No .csproj found"
+                                            exit 1
+                                        fi
 
-                                            dotnet tool install --global dotnet-sonarscanner || true
+                                        dotnet tool install --global dotnet-sonarscanner || true
 
-                                            dotnet sonarscanner begin \\
-                                            /k:"recomind-${serviceName}" \\
-                                            /o:"recomind-company" \\
-                                            /d:sonar.host.url="https://sonarcloud.io" \\
-                                            /d:sonar.token="${SONAR_TOKEN}"
+                                        rm -rf /tmp/.sonarqube
+                                        export SONAR_USER_HOME=$WORKSPACE/.sonar
 
-                                            dotnet build "\$csproj" -c Release
+                                        dotnet sonarscanner begin \
+                                        /k:"recomind-''' + serviceName + '''" \
+                                        /o:"recomind-company" \
+                                        /d:sonar.host.url="https://sonarcloud.io" \
+                                        /d:sonar.token="$SONAR_TOKEN"
 
-                                            dotnet sonarscanner end \\
-                                            /d:sonar.token="${SONAR_TOKEN}"
-                                        """
+                                        dotnet build "$csproj" -c Release
+
+                                        dotnet sonarscanner end \
+                                        /d:sonar.token="$SONAR_TOKEN"
+                                        '''
                                         echo "✅ SonarQube analysis completed for: ${serviceName}"
                                     }
                                 }
