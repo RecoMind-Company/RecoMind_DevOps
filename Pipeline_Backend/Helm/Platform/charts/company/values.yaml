@@ -79,7 +79,7 @@ env:
     valueFrom:
       secretKeyRef:
         name: app-secrets
-        key: ProductionConnectionString-Company
+        key: CompanyDbConnectionString
         
   - name: Kestrel__Endpoints__Http__Url
     value: "http://0.0.0.0:8007"
