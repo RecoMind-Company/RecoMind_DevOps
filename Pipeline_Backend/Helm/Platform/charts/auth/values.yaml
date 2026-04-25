@@ -75,3 +75,8 @@ env:
       secretKeyRef:
         name: app-secrets
         key: Jwt-SecretKey
+  - name: ConnectionStrings__ProdcutionConnectionString_Auth
+    valueFrom:
+      secretKeyRef:
+        name: app-secrets
+        key: ProductionConnectionString-Auth
