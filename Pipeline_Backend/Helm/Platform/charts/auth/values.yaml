@@ -9,6 +9,11 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
+volumeMounts:
+  - name: secrets-store
+    mountPath: "/mnt/secrets"
+    readOnly: true
+
 volumes:
   - name: secrets-store
     csi:
