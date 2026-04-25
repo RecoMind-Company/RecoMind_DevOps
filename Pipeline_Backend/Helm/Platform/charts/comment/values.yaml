@@ -54,6 +54,10 @@ resources:
     memory: 256Mi
 
 env:
+
+  - name: ASPNETCORE_ENVIRONMENT
+    value: "Development"
+  
   - name: jwt__Audience
     valueFrom:
       configMapKeyRef:
