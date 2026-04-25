@@ -1,11 +1,11 @@
 
-nameOverride: "recomind"
-fullnameOverride: "recomind"
+nameOverride: "recomind-plan"
+fullnameOverride: "recomind-plan"
 
 replicaCount: 2
 
 image:
-  repository: redasaad1234/backend-authenticationservice
+  repository: redasaad1234/backend-planeservice
   tag: latest
   pullPolicy: IfNotPresent
 
@@ -27,15 +27,15 @@ virtualService:
   enabled: true
 
 service:
-  name: auth-svc
+  name: plan-svc
   type: ClusterIP
   http:
     name: http
-    port: 8011
+    port: 8005
     protocol: http
   grpc:
     name: grpc
-    port: 5011
+    port: 8005
     protocol: h2c
 
 destinationRule:
@@ -75,19 +75,19 @@ env:
       secretKeyRef:
         name: app-secrets
         key: Jwt-SecretKey
-  - name: ConnectionStrings__ProdcutionConnectionString_Auth
+  - name: ConnectionStrings__ProdcutionConnection_Plan
     valueFrom:
       secretKeyRef:
         name: app-secrets
-        key: ProductionConnectionString-Auth
+        key: ProductionConnection-Plan
         
   - name: Kestrel__Endpoints__Http__Url
-    value: "http://0.0.0.0:8011"
+    value: "http://0.0.0.0:8005"
   - name: Kestrel__Endpoints__Http__Protocols
     value: "Http1"
 
   # إعداد منفذ الـ gRPC (بدون TLS)
   - name: Kestrel__Endpoints__Grpc__Url
-    value: "http://0.0.0.0:5011"
+    value: "http://0.0.0.0:8005"
   - name: Kestrel__Endpoints__Grpc__Protocols
     value: "Http2"

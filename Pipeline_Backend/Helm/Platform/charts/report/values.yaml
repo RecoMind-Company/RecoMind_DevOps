@@ -1,11 +1,11 @@
 
-nameOverride: "recomind"
-fullnameOverride: "recomind"
+nameOverride: "recomind-report"
+fullnameOverride: "recomind-report"
 
 replicaCount: 2
 
 image:
-  repository: redasaad1234/backend-authenticationservice
+  repository: redasaad1234/backend-reportservice
   tag: latest
   pullPolicy: IfNotPresent
 
@@ -27,15 +27,15 @@ virtualService:
   enabled: true
 
 service:
-  name: auth-svc
+  name: report-svc
   type: ClusterIP
   http:
     name: http
-    port: 8011
+    port: 8008
     protocol: http
   grpc:
     name: grpc
-    port: 5011
+    port: 5008
     protocol: h2c
 
 destinationRule:
@@ -75,19 +75,19 @@ env:
       secretKeyRef:
         name: app-secrets
         key: Jwt-SecretKey
-  - name: ConnectionStrings__ProdcutionConnectionString_Auth
+  - name: ConnectionStrings__ProductionConnection_Report
     valueFrom:
       secretKeyRef:
         name: app-secrets
-        key: ProductionConnectionString-Auth
+        key: ProductionConnectionString-Report
         
   - name: Kestrel__Endpoints__Http__Url
-    value: "http://0.0.0.0:8011"
+    value: "http://0.0.0.0:8008"
   - name: Kestrel__Endpoints__Http__Protocols
     value: "Http1"
 
   # إعداد منفذ الـ gRPC (بدون TLS)
   - name: Kestrel__Endpoints__Grpc__Url
-    value: "http://0.0.0.0:5011"
+    value: "http://0.0.0.0:5008"
   - name: Kestrel__Endpoints__Grpc__Protocols
     value: "Http2"
