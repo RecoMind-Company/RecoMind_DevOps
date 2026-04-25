@@ -46,7 +46,7 @@ global:
     tls: 
       - hosts:
         - api.recomind.site
-        secretName: recomind-tls
+        secretName: recomind-tls-v2
 
 PVC:
   enabled: true
