@@ -80,3 +80,14 @@ env:
       secretKeyRef:
         name: app-secrets
         key: ProductionConnectionString-Auth
+        
+  - name: Kestrel__Endpoints__Http__Url
+    value: "http://0.0.0.0:8011"
+  - name: Kestrel__Endpoints__Http__Protocols
+    value: "Http1"
+
+  # إعداد منفذ الـ gRPC (بدون TLS)
+  - name: Kestrel__Endpoints__Grpc__Url
+    value: "http://0.0.0.0:5011"
+  - name: Kestrel__Endpoints__Grpc__Protocols
+    value: "Http2"
