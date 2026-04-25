@@ -35,7 +35,7 @@ service:
     protocol: http
   grpc:
     name: grpc
-    port: 8005
+    port: 5005
     protocol: h2c
 
 destinationRule:
@@ -88,6 +88,6 @@ env:
 
   # إعداد منفذ الـ gRPC (بدون TLS)
   - name: Kestrel__Endpoints__Grpc__Url
-    value: "http://0.0.0.0:8005"
+    value: "http://0.0.0.0:5005"
   - name: Kestrel__Endpoints__Grpc__Protocols
     value: "Http2"
