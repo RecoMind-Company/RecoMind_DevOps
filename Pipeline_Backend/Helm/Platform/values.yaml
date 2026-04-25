@@ -27,7 +27,7 @@ global:
       - host: api.recomind.site
         paths:
           - path: /auth/?(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: auth-svc
