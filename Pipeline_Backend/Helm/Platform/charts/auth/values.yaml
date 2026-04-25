@@ -1,6 +1,6 @@
 
-nameOverride: "recomind"
-fullnameOverride: "recomind"
+nameOverride: "recomind-auth"
+fullnameOverride: "recomind-auth"
 
 replicaCount: 2
 

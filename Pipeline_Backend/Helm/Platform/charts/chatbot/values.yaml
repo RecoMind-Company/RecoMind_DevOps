@@ -1,6 +1,6 @@
 
-nameOverride: "recomind"
-fullnameOverride: "recomind"
+nameOverride: "recomind-chatbot"
+fullnameOverride: "recomind-chatbot"
 
 replicaCount: 2
 

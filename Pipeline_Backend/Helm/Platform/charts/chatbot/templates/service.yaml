@@ -21,4 +21,4 @@ spec:
 
   selector:
     {{- include "Platform.selectorLabels" . | nindent 4 }}
-    {{- .Chart.Name }}-deployment
+    app.kubernetes.io/name: {{ .Chart.Name }} 
