@@ -31,11 +31,11 @@ service:
   type: ClusterIP
   http:
     name: http
-    port: 8005
+    port: 8006
     protocol: http
   grpc:
     name: grpc
-    port: 5005
+    port: 5006
     protocol: h2c
 
 destinationRule:
@@ -82,12 +82,12 @@ env:
         key: ProductionConnectionString-Invitation
 
   - name: Kestrel__Endpoints__Http__Url
-    value: "http://0.0.0.0:8005"
+    value: "http://0.0.0.0:8006"
   - name: Kestrel__Endpoints__Http__Protocols
     value: "Http1"
 
   # إعداد منفذ الـ gRPC (بدون TLS)
   - name: Kestrel__Endpoints__Grpc__Url
-    value: "http://0.0.0.0:5005"
+    value: "http://0.0.0.0:5006"
   - name: Kestrel__Endpoints__Grpc__Protocols
     value: "Http2"
