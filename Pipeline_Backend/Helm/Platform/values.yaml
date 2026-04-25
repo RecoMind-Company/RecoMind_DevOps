@@ -50,6 +50,55 @@ global:
                 port:
                   number: 8012
 
+          - path: /company(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: company-svc
+                port:
+                  number: 8007
+
+          - path: /invitation(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: invitation-svc
+                port:
+                  number: 8005
+
+          - path: /plan(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: plan-svc
+                port:
+                  number: 8006
+
+
+          - path: /report(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: report-svc
+                port:
+                  number: 8008
+
+          - path: /subscription(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: subscription-svc
+                port:
+                  number: 8004
+
+
+          - path: /task(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: task-svc
+                port:
+                  number: 8013
           
     
     
