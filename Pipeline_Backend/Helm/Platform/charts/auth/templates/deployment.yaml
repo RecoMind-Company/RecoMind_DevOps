@@ -4,7 +4,6 @@ metadata:
   name: {{ .Chart.Name }}-deployment
   labels:
     {{- include "Platform.labels" . | nindent 4 }}
-    app.kubernetes.io/name: {{ .Chart.Name }}
 spec:
   replicas: {{ .Values.replicaCount }}
   

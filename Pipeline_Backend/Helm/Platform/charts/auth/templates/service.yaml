@@ -20,4 +20,3 @@ spec:
 
   selector:
     {{- include "Platform.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/name: {{ .Chart.Name }}
