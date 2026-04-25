@@ -42,6 +42,14 @@ global:
                 port:
                   number: 8009
 
+          - path: /comment(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: comment-svc
+                port:
+                  number: 8012
+
           
     
     
