@@ -27,7 +27,7 @@ virtualService:
   enabled: true
 
 service:
-  name: auth-svc
+  name: chatbot-svc
   type: ClusterIP
   http:
     name: http
