@@ -34,6 +34,14 @@ global:
                 port:
                   number: 8011
 
+          - path: /chatbot/?(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: chatbot-svc
+                port:
+                  number: 8009
+
           
     
     
