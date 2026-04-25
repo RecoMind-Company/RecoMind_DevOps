@@ -33,7 +33,7 @@ global:
                 port:
                   number: 8011
 
-          - path: /auth
+          - path: /auth-grpc
             pathType: Prefix
             backend:
               service:
