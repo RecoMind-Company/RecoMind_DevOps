@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-svc
   labels:
     {{- include "Platform.labels" . | nindent 4 }}
+    
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -20,3 +21,4 @@ spec:
 
   selector:
     {{- include "Platform.selectorLabels" . | nindent 4 }}
+    {{- .Chart.Name }}-deployment
