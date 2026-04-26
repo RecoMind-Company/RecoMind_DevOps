@@ -1,0 +1,93 @@
+
+nameOverride: "recomind-notification"
+fullnameOverride: "recomind-notification`"
+
+replicaCount: 2
+
+image:
+  repository: redasaad1234/backend-notificationservice
+  tag: latest
+  pullPolicy: IfNotPresent
+
+volumeMounts:
+  - name: secrets-store
+    mountPath: "/mnt/secrets"
+    readOnly: true
+
+volumes:
+  - name: secrets-store
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: app-secrets
+
+
+virtualService:
+  enabled: true
+
+service:
+  name: notification-svc
+  type: ClusterIP
+  http:
+    name: http
+    port: 8015
+    protocol: http
+  grpc:
+    name: grpc
+    port: 5015
+    protocol: h2c
+
+destinationRule:
+  enabled: true
+  tls:
+    mode: ISTIO_MUTUAL
+  loadBalancer: ROUND_ROBIN
+  h2UpgradePolicy: UPGRADE
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+env:
+  - name: jwt__Audience
+    valueFrom:
+      configMapKeyRef:
+        name: recomind-config
+        key: jwt-Audience
+  - name: jwt__Issuers
+    valueFrom:
+      configMapKeyRef:
+        name: recomind-config
+        key: jwt-Issuer
+  - name: jwt__Expire  
+    valueFrom:
+      configMapKeyRef:
+        name: recomind-config
+        key: jwt-Expire
+
+  - name: JwtOptions__SecretKey
+    valueFrom:
+      secretKeyRef:
+        name: app-secrets
+        key: Jwt-SecretKey
+  - name: ConnectionStrings__ProductionConnection_Notification
+    valueFrom:
+      secretKeyRef:
+        name: app-secrets
+        key: ProductionConnection-Notification
+        
+  - name: Kestrel__Endpoints__Http__Url
+    value: "http://0.0.0.0:8015"
+  - name: Kestrel__Endpoints__Http__Protocols
+    value: "Http1"
+
+  # إعداد منفذ الـ gRPC (بدون TLS)
+  - name: Kestrel__Endpoints__Grpc__Url
+    value: "http://0.0.0.0:5015"
+  - name: Kestrel__Endpoints__Grpc__Protocols
+    value: "Http2"

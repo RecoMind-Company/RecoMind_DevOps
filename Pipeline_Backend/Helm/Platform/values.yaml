@@ -99,6 +99,38 @@ global:
                 name: task-svc
                 port:
                   number: 8013
+
+          - path: /api/Team(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: team-svc
+                port:
+                  number: 8010
+
+          - path: /api/Notification(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: notification-svc
+                port:
+                  number: 8015
+
+          - path: /api/Mapping(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mapping-svc
+                port:
+                  number: 8016
+
+          - path: /api/DbSetting(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: dbsetting-svc
+                port:
+                  number: 8003
           
     
     
