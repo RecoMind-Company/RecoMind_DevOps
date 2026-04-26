@@ -2,7 +2,7 @@
 nameOverride: "recomind-notification"
 fullnameOverride: "recomind-notification`"
 
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: redasaad1234/backend-notificationservice
@@ -47,10 +47,10 @@ destinationRule:
 
 resources:
   requests:
-    cpu: 100m
+    cpu: 50m
     memory: 128Mi
   limits:
-    cpu: 500m
+    cpu: 100m
     memory: 256Mi
 
 env:

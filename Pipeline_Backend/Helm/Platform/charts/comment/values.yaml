@@ -2,7 +2,7 @@
 nameOverride: "recomind-comment"
 fullnameOverride: "recomind-comment"
 
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: redasaad1234/backend-commentservice
@@ -50,7 +50,7 @@ resources:
     cpu: 100m
     memory: 128Mi
   limits:
-    cpu: 500m
+    cpu: 200m
     memory: 256Mi
 
 env:
