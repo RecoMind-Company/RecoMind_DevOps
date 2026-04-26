@@ -26,7 +26,7 @@ global:
     hosts:
       - host: api.recomind.site
         paths:
-          - path: /auth(/|$)(.*)
+          - path: /api(auth|users|Authentication)(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
