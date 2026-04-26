@@ -15,49 +15,21 @@ pipeline{
 
         
         stage("checkout Source code") {
-            // agent {
-            //     kubernetes {
-            //         yaml """
-            //         apiVersion: v1
-            //         kind: Pod
-            //         spec:
-            //           containers:
-            //           - name: git
-            //             image: alpine/git:latest
-            //             command:
-            //             - cat
-            //             tty: true
-            //         """
-            //     }
-            // }
+            
             steps {
-                // container('git') {
+                
                     git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
-                    // stash name: 'source', includes: '**/*'
-                // }
+                  
+                
                    
                
             }
         }
         stage('Discover Microservices') {
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: shell
-                        image: alpine:latest
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
+            
             steps {
-                container('shell') {
-                    unstash 'source'
+                
+                    
                     script {
                         // Debug: List what's in the workspace
                         sh "echo '📁 Contents of workspace:' && pwd && ls -la"
@@ -87,7 +59,7 @@ pipeline{
                             echo "🔍 Found services: ${services}"
                         }
                     }
-                }
+                
             }
         }
 
