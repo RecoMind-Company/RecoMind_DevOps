@@ -128,7 +128,7 @@ global:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: databasesettings-svc
+                name: database-settings-svc
                 port:
                   number: 8003
           
