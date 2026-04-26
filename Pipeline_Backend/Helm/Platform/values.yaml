@@ -34,7 +34,7 @@ global:
                 port:
                   number: 8011
 
-          - path: /(?i)(?:api/)?(Chatbot)(/|$)(.*)
+          - path: /api/(Chatbot)(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
