@@ -26,9 +26,9 @@ pipeline{
             }
         }
         stage('Discover Microservices') {
-            unstash 'source'
+            
             steps {
-                
+                unstash 'source'
                     
                     script {
                         // Debug: List what's in the workspace
