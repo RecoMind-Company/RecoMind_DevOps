@@ -1,5 +1,5 @@
 pipeline{
-    agent none
+    agent any
 
     environment {
         DOCKERHUB = credentials('Docker_Hub_Backend')          // credentials من Jenkins (username/password)
@@ -15,26 +15,26 @@ pipeline{
 
         
         stage("checkout Source code") {
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: git
-                        image: alpine/git:latest
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
+            // agent {
+            //     kubernetes {
+            //         yaml """
+            //         apiVersion: v1
+            //         kind: Pod
+            //         spec:
+            //           containers:
+            //           - name: git
+            //             image: alpine/git:latest
+            //             command:
+            //             - cat
+            //             tty: true
+            //         """
+            //     }
+            // }
             steps {
-                container('git') {
+                // container('git') {
                     git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
-                    stash name: 'source', includes: '**/*'
-                }
+                    // stash name: 'source', includes: '**/*'
+                // }
                    
                
             }
