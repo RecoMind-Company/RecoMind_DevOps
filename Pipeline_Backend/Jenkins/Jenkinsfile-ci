@@ -19,14 +19,14 @@ pipeline{
             steps {
                 
                     git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
-                  
+                    stash name: 'source', includes: '**/*'
                 
                    
                
             }
         }
         stage('Discover Microservices') {
-            
+            unstash 'source'
             steps {
                 
                     
