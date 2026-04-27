@@ -171,94 +171,80 @@ pipeline{
                 }
             }
         }
-        stage('Archive Dependency Report') {
-            steps {  
-                    archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true  
-            }
-        }
+       
 
-
-        stage('SonarQube Analysis') {
+        stage("SonarQube Analysis") {
             agent {
                 kubernetes {
                     yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: dotnet
-                        image: mcr.microsoft.com/dotnet/sdk:8.0
-                        command:
-                        - cat
-                        tty: true
-                      - name: java
-                        image: eclipse-temurin:17-jdk
-                        command: ["cat"]
-                        tty: true 
-                    """
+        apiVersion: v1
+        kind: Pod
+        spec:
+        containers:
+        - name: dotnet
+            image: mcr.microsoft.com/dotnet/sdk:8.0
+            command: ["cat"]
+            tty: true
+        - name: java
+            image: eclipse-temurin:17-jdk
+            command: ["cat"]
+            tty: true
+        """
                 }
             }
+
             steps {
                 container('dotnet') {
                     unstash 'source'
-                    withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN_SECURE')]) {
+
+                    withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
+
                         script {
-                            int maxParallel = 2
+
+                            // install once فقط
+                            sh '''
+                                dotnet tool install --global dotnet-sonarscanner || true
+                                export PATH="$PATH:/root/.dotnet/tools"
+                            '''
+
                             def serviceList = services.toList()
-                            def chunks = serviceList.collate(maxParallel)
 
-                            int groupIndex = 1
-                            for (chunk in chunks) {
-                                echo "➡️ Analyzing group ${groupIndex}/${chunks.size()} in parallel..."
+                            for (serviceName in serviceList) {
 
-                                def analysisSteps = [:]
+                                echo "🔍 Sonar for ${serviceName}"
 
-                                for (service in chunk) {
-                                    def serviceName = service
-                                    analysisSteps["Analyze ${serviceName}"] = {
-                                        sh '''
-                                        export PATH="$PATH:/root/.dotnet/tools"
-                                        cd ${SERVICES_DIR}/${serviceName}
+                                sh """
+                                export PATH="\$PATH:/root/.dotnet/tools"
+                                export SONAR_USER_HOME=\$WORKSPACE/.sonar
 
-                                        # Find .csproj file
-                                        csproj=$(find . -name "*.csproj" -type f | head -n 1)
+                                cd ${SERVICES_DIR}/${serviceName}
 
-                                        if [ -z "$csproj" ]; then
-                                            echo "❌ No .csproj found"
-                                            exit 1
-                                        fi
+                                csproj=\$(find . -name "*.csproj" | head -n 1)
 
-                                        dotnet tool install --global dotnet-sonarscanner || true
+                                if [ -z "\$csproj" ]; then
+                                    echo "No csproj found"
+                                    exit 1
+                                fi
 
-                                        rm -rf /tmp/.sonarqube
-                                        export SONAR_USER_HOME=$WORKSPACE/.sonar
+                                dotnet sonarscanner begin \
+                                /k:"recomind-${serviceName}" \
+                                /o:"recomind-company" \
+                                /d:sonar.host.url="https://sonarcloud.io" \
+                                /d:sonar.token="\$SONAR_TOKEN"
 
-                                        dotnet sonarscanner begin \
-                                        /k:"recomind-''' + serviceName + '''" \
-                                        /o:"recomind-company" \
-                                        /d:sonar.host.url="https://sonarcloud.io" \
-                                        /d:sonar.token="$SONAR_TOKEN"
+                                dotnet build "\$csproj" -c Release --no-restore
 
-                                        dotnet build "$csproj" -c Release
+                                dotnet sonarscanner end \
+                                /d:sonar.token="\$SONAR_TOKEN"
+                                """
 
-                                        dotnet sonarscanner end \
-                                        /d:sonar.token="$SONAR_TOKEN"
-                                        '''
-                                        echo "✅ SonarQube analysis completed for: ${serviceName}"
-                                    }
-                                }
-
-                                parallel analysisSteps
-                                groupIndex++
+                                echo "✅ Done: ${serviceName}"
                             }
-
-                            echo "🎉 All SonarQube analyses completed successfully!"
                         }
                     }
                 }
             }
         }
-
 
         stage('Achieve Services List') {
             
