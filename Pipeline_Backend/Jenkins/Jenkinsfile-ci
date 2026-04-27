@@ -84,7 +84,7 @@ pipeline{
             spec:
             volumes:
             - name: nuget-cache
-                emptyDir: {}
+              emptyDir: {}
 
             containers:
             - name: dotnet
@@ -93,7 +93,7 @@ pipeline{
                 tty: true
                 volumeMounts:
                 - name: nuget-cache
-                mountPath: /nuget-cache
+                  mountPath: /nuget-cache
             """
                 }
             }
