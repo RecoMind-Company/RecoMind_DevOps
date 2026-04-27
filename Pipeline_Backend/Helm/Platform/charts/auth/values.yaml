@@ -60,7 +60,7 @@ env:
         name: recomind-config
         key: jwt-Audience
 
-  - name: JwtOptions__Issuers
+  - name: JwtOptions__Issuer
     valueFrom:
       configMapKeyRef:
         name: recomind-config
