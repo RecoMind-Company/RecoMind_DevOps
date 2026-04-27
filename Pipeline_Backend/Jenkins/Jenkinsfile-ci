@@ -17,18 +17,19 @@ pipeline{
         stage("checkout Source code") {
             
             steps {
+
+                sh'''
+                    cd /var/lib/jenkins/workspace/Pipeline-Backend-ci/
+                    git remote prune origin
+                '''
                 
                     git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
-                    stash name: 'source', includes: '**/*'
-                
-                   
-               
+         
             }
         }
         stage('Discover Microservices') {
             
             steps {
-                unstash 'source'
                     
                 script {
                     // Debug: List what's in the workspace
@@ -243,6 +244,13 @@ pipeline{
         }
 
         stage('Archive Dependency Report') {
+            steps {  
+                    archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true  
+            }
+        }
+
+
+        stage('SonarQube Analysis') {
             agent {
                 kubernetes {
                     yaml """
@@ -250,125 +258,85 @@ pipeline{
                     kind: Pod
                     spec:
                       containers:
-                      - name: shell
-                        image: alpine:latest
+                      - name: dotnet
+                        image: mcr.microsoft.com/dotnet/sdk:8.0
                         command:
                         - cat
                         tty: true
+                      - name: java
+                        image: eclipse-temurin:17-jdk
+                        command: ["cat"]
+                        tty: true 
                     """
                 }
             }
             steps {
-                container('shell') {
-                    archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
+                container('dotnet') {
+                    unstash 'source'
+                    withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN_SECURE')]) {
+                        script {
+                            int maxParallel = 2
+                            def serviceList = services.toList()
+                            def chunks = serviceList.collate(maxParallel)
+
+                            int groupIndex = 1
+                            for (chunk in chunks) {
+                                echo "➡️ Analyzing group ${groupIndex}/${chunks.size()} in parallel..."
+
+                                def analysisSteps = [:]
+
+                                for (service in chunk) {
+                                    def serviceName = service
+                                    analysisSteps["Analyze ${serviceName}"] = {
+                                        sh '''
+                                        export PATH="$PATH:/root/.dotnet/tools"
+                                        cd ${SERVICES_DIR}/${serviceName}
+
+                                        # Find .csproj file
+                                        csproj=$(find . -name "*.csproj" -type f | head -n 1)
+
+                                        if [ -z "$csproj" ]; then
+                                            echo "❌ No .csproj found"
+                                            exit 1
+                                        fi
+
+                                        dotnet tool install --global dotnet-sonarscanner || true
+
+                                        rm -rf /tmp/.sonarqube
+                                        export SONAR_USER_HOME=$WORKSPACE/.sonar
+
+                                        dotnet sonarscanner begin \
+                                        /k:"recomind-''' + serviceName + '''" \
+                                        /o:"recomind-company" \
+                                        /d:sonar.host.url="https://sonarcloud.io" \
+                                        /d:sonar.token="$SONAR_TOKEN"
+
+                                        dotnet build "$csproj" -c Release
+
+                                        dotnet sonarscanner end \
+                                        /d:sonar.token="$SONAR_TOKEN"
+                                        '''
+                                        echo "✅ SonarQube analysis completed for: ${serviceName}"
+                                    }
+                                }
+
+                                parallel analysisSteps
+                                groupIndex++
+                            }
+
+                            echo "🎉 All SonarQube analyses completed successfully!"
+                        }
+                    }
                 }
             }
         }
 
 
-        // stage('SonarQube Analysis') {
-        //     agent {
-        //         kubernetes {
-        //             yaml """
-        //             apiVersion: v1
-        //             kind: Pod
-        //             spec:
-        //               containers:
-        //               - name: dotnet
-        //                 image: mcr.microsoft.com/dotnet/sdk:8.0
-        //                 command:
-        //                 - cat
-        //                 tty: true
-        //               - name: java
-        //                 image: eclipse-temurin:17-jdk
-        //                 command: ["cat"]
-        //                 tty: true 
-        //             """
-        //         }
-        //     }
-        //     steps {
-        //         container('dotnet') {
-        //             unstash 'source'
-        //             withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN_SECURE')]) {
-        //                 script {
-        //                     int maxParallel = 2
-        //                     def serviceList = services.toList()
-        //                     def chunks = serviceList.collate(maxParallel)
-
-        //                     int groupIndex = 1
-        //                     for (chunk in chunks) {
-        //                         echo "➡️ Analyzing group ${groupIndex}/${chunks.size()} in parallel..."
-
-        //                         def analysisSteps = [:]
-
-        //                         for (service in chunk) {
-        //                             def serviceName = service
-        //                             analysisSteps["Analyze ${serviceName}"] = {
-        //                                 sh '''
-        //                                 export PATH="$PATH:/root/.dotnet/tools"
-        //                                 cd ${SERVICES_DIR}/${serviceName}
-
-        //                                 # Find .csproj file
-        //                                 csproj=$(find . -name "*.csproj" -type f | head -n 1)
-
-        //                                 if [ -z "$csproj" ]; then
-        //                                     echo "❌ No .csproj found"
-        //                                     exit 1
-        //                                 fi
-
-        //                                 dotnet tool install --global dotnet-sonarscanner || true
-
-        //                                 rm -rf /tmp/.sonarqube
-        //                                 export SONAR_USER_HOME=$WORKSPACE/.sonar
-
-        //                                 dotnet sonarscanner begin \
-        //                                 /k:"recomind-''' + serviceName + '''" \
-        //                                 /o:"recomind-company" \
-        //                                 /d:sonar.host.url="https://sonarcloud.io" \
-        //                                 /d:sonar.token="$SONAR_TOKEN"
-
-        //                                 dotnet build "$csproj" -c Release
-
-        //                                 dotnet sonarscanner end \
-        //                                 /d:sonar.token="$SONAR_TOKEN"
-        //                                 '''
-        //                                 echo "✅ SonarQube analysis completed for: ${serviceName}"
-        //                             }
-        //                         }
-
-        //                         parallel analysisSteps
-        //                         groupIndex++
-        //                     }
-
-        //                     echo "🎉 All SonarQube analyses completed successfully!"
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-
-
         stage('Achieve Services List') {
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: shell
-                        image: alpine:latest
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
+            
             steps {
-                container('shell') {
                     writeFile file: 'services.txt', text: services.join('\n')
                     archiveArtifacts artifacts: 'services.txt', allowEmptyArchive: true
-                }
             }
         }
 
