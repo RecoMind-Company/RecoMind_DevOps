@@ -18,19 +18,34 @@ pipeline{
             
             steps {
 
-                sh'''
-                    cd /var/lib/jenkins/workspace/Pipeline_Backend_CI/
-                    git remote prune origin
-                '''
-                
-                    git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git' , credentialsId: 'Git_hub'
+               checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/RecoMind-Company/RecoMind-Backend.git',
+                        credentialsId: 'Git_hub'
+                    ]],
+                    extensions: [
+                        [$class: 'PruneStaleBranch']  // 🔥 دي بتعمل prune أوتوماتيك
+                    ]
+                ])
+
+                stash name: 'source', includes: '**/*'
+
+                post {
+                    always {
+                        cleanWs()
+                    }
+                }
+
+
          
             }
         }
         stage('Discover Microservices') {
             
             steps {
-                    
+                unstash 'source'   
                 script {
                     // Debug: List what's in the workspace
                     sh "echo '📁 Contents of workspace:' && pwd && ls -la"
