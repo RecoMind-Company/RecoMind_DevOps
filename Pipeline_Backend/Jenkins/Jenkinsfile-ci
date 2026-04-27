@@ -236,12 +236,19 @@ spec:
                         echo "📦 RESTORE"
                         dotnet restore "\$sln"
 
+                        echo "🧪 TEST + COVERAGE"
+                        dotnet test "\$sln" \
+                        --collect:"XPlat Code Coverage" \
+                        --results-directory ./TestResults
+
                         echo "🚀 SONAR BEGIN"
                         dotnet sonarscanner begin \
-                          /k:"recomind-${serviceName}" \
-                          /o:"recomind-company" \
-                          /d:sonar.host.url="https://sonarcloud.io" \
-                          /d:sonar.token="\$SONAR_TOKEN"
+                        /k:"recomind-${serviceName}" \
+                        /o:"recomind-company" \
+                        /d:sonar.host.url="https://sonarcloud.io" \
+                        /d:sonar.token="\$SONAR_TOKEN" \
+                        /d:sonar.sources="." \
+                        /d:sonar.cs.opencover.reportsPaths="**/coverage.cobertura.xml"
 
                         echo "🔨 BUILD"
                         dotnet build "\$sln" -c Release --no-restore
