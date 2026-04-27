@@ -9,7 +9,7 @@ pipeline{
         TAG = "latest"
         SERVICES_DIR = "Microservices"  // Updated path
         NVD_API_KEY = credentials('nvd-api-key-id')
-        NUGET_PACKAGES = "${WORKSPACE}/.nuget/packages"
+        NUGET_PACKAGES = "/nuget-cache"
         }
 
     stages {
@@ -79,16 +79,22 @@ pipeline{
             agent {
                 kubernetes {
                     yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: dotnet
-                        image: mcr.microsoft.com/dotnet/sdk:8.0
-                        command:
-                        - cat
-                        tty: true
-                    """
+            apiVersion: v1
+            kind: Pod
+            spec:
+            volumes:
+            - name: nuget-cache
+                emptyDir: {}
+
+            containers:
+            - name: dotnet
+                image: mcr.microsoft.com/dotnet/sdk:8.0
+                command: ["cat"]
+                tty: true
+                volumeMounts:
+                - name: nuget-cache
+                mountPath: /nuget-cache
+            """
                 }
             }
 
@@ -102,12 +108,11 @@ pipeline{
                         def chunks = serviceList.collate(maxParallel)
 
                         withEnv([
-                            "NUGET_PACKAGES=${NUGET_PACKAGES}",
-                            "NUGET_XMLDOC_MODE=skip"
+                            "NUGET_PACKAGES=/nuget-cache",
                         ]) {
 
                             // مهم جدًا: إنشاء فولدر الكاش
-                            sh "mkdir -p ${NUGET_PACKAGES}"
+                            sh "mkdir -p /nuget-cache"
 
                             int groupIndex = 1
 
@@ -136,8 +141,8 @@ pipeline{
 
                                             # مهم جدًا لحل مشكلة assets.json
                                             dotnet restore "\$sln" \
-                                                --packages ${NUGET_PACKAGES} \
-                                                --force-evaluate
+                                                --packages /nuget-cache \
+                                                --disable-parallel
                                         """
                                     }
                                 }
@@ -268,6 +273,14 @@ pipeline{
             image: eclipse-temurin:17-jdk
             command: ["cat"]
             tty: true
+
+            volumeMounts:
+            - name: nuget-cache
+              mountPath: /nuget-cache
+
+          volumes:
+          - name: nuget-cache
+            emptyDir: {}
         """
                 }
             }
@@ -284,6 +297,8 @@ pipeline{
                             sh '''
                                 dotnet tool install --global dotnet-sonarscanner || true
                                 export PATH="$PATH:/root/.dotnet/tools"
+                                export SONAR_USER_HOME=$WORKSPACE/.sonar
+                                mkdir -p $SONAR_USER_HOME
                             '''
 
                             def serviceList = services.toList()
@@ -294,14 +309,14 @@ pipeline{
 
                                 sh """
                                 export PATH="\$PATH:/root/.dotnet/tools"
-                                export SONAR_USER_HOME=\$WORKSPACE/.sonar
+                                
 
                                 cd ${SERVICES_DIR}/${serviceName}
 
-                                csproj=\$(find . -name "*.csproj" | head -n 1)
+                                sln=\$(find . -name "*.sln" | head -n 1)
 
-                                if [ -z "\$csproj" ]; then
-                                    echo "No csproj found"
+                                if [ -z "\$sln" ]; then
+                                    echo "No sln found"
                                     exit 1
                                 fi
 
@@ -311,7 +326,7 @@ pipeline{
                                 /d:sonar.host.url="https://sonarcloud.io" \
                                 /d:sonar.token="\$SONAR_TOKEN"
 
-                                dotnet build "\$csproj" -c Release --no-restore
+                                dotnet build "\$sln" -c Release --no-restore
 
                                 dotnet sonarscanner end \
                                 /d:sonar.token="\$SONAR_TOKEN"
