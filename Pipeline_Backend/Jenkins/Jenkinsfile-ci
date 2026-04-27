@@ -151,7 +151,6 @@ pipeline{
 
             steps {
                 container('dotnet') {
-                    unstash 'source'
                     script {
                         int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
                         def serviceList = services.toList()  // تحويل Array إلى List
@@ -172,7 +171,7 @@ pipeline{
                                     sln=\$(find . -name "*.sln" | head -n 1)
 
                                     echo "� Building: \$sln"
-                                    dotnet build \$sln -c Release
+                                    dotnet build \$sln -c Release --no-restore
                                     """
                                     echo "✅ Built: ${serviceName}"
                                 }
