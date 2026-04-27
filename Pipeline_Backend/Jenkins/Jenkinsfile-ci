@@ -19,7 +19,7 @@ pipeline{
             steps {
 
                 sh'''
-                    cd /var/lib/jenkins/workspace/Pipeline-Backend-CI/
+                    cd /var/lib/jenkins/workspace/Pipeline_Backend_CI/
                     git remote prune origin
                 '''
                 
