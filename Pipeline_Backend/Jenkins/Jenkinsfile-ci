@@ -136,66 +136,41 @@ pipeline{
 
         stage('OWASP Dependency Check') {
 
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: dependency-check
-                        image: owasp/dependency-check:latest
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
+            agent any   // أو نفس agent بتاعك
+
             steps {
-                container('dependency-check') {
-                    unstash 'source'
-                    script {
-                    def reportDir = 'dependency-report'
+
+                unstash 'source'
+
+                script {
+
+                    def reportDir = "dependency-report"
                     sh "mkdir -p ${reportDir}"
 
-                    int maxParallel = 2  // الحد الأقصى لعدد scans متوازية (أقل من Restore/Build لأنها ثقيلة)
-                    def serviceList = services.toList()  // تحويل Array إلى List
-                    def chunks = serviceList.collate(maxParallel)
+                    echo "🔍 Running OWASP scan on full repository..."
 
-                    int groupIndex = 1
-                    for (chunk in chunks) {
-                        echo "➡️ Scanning group ${groupIndex}/${chunks.size()} in parallel..."
+                    dependencyCheck(
+                        additionalArguments: """
+                            --scan .
+                            --format HTML
+                            --format XML
+                            --out ${reportDir}
+                            --data /var/lib/jenkins/caches/dependency-check
+                            --nvdApiKey ${NVD_API_KEY}
+                        """,
+                        odcInstallation: 'OWASP-Dependency'
+                    )
 
-                        def scanSteps = [:]
+                    echo "📄 Report generated in: ${reportDir}"
+                }
+            }
 
-                        for (service in chunk) {
-                            def serviceName = service  // مهم داخل closure
-                            scanSteps["Scan ${serviceName}"] = {
-                                def servicePath = "${SERVICES_DIR}/${serviceName}"
-                                def reportPath = "${reportDir}/dependency-check-${serviceName}.html"
-
-                                echo "🔍 Running OWASP Dependency Check for ${serviceName}..."
-
-                                echo 'Running OWASP Dependency Check...'
-                                sh 'mkdir -p dependency-check-report'
-                                dependencyCheck additionalArguments: '--format HTML --out dependency-check-report --scan ${serviceName}  --data ${DEPENDENCY_CHECK_DATA} --nvdApiKey ${NVD_API_KEY} ', odcInstallation: 'OWASP-Dependency'
-
-                                echo "📝 Report generated: ${reportPath}"
-                            }
-                        }
-
-                        parallel scanSteps  // تشغيل المجموعة بشكل parallel
-                        groupIndex++
-                    }
-
-                    echo "🎉 All OWASP Dependency Checks completed successfully!"
-                    }
-                
-            
+            post {
+                always {
+                    archiveArtifacts artifacts: 'dependency-report/**/*', allowEmptyArchive: true
                 }
             }
         }
-
         stage('Archive Dependency Report') {
             steps {  
                     archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true  
