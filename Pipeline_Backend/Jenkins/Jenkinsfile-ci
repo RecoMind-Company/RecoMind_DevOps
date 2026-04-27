@@ -15,10 +15,8 @@ pipeline{
 
         
         stage("checkout Source code") {
-            
             steps {
-
-               checkout([
+                checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']],
                     userRemoteConfigs: [[
@@ -26,20 +24,17 @@ pipeline{
                         credentialsId: 'Git_hub'
                     ]],
                     extensions: [
-                        [$class: 'PruneStaleBranch']  // 🔥 دي بتعمل prune أوتوماتيك
+                        [$class: 'PruneStaleBranch']  
                     ]
                 ])
 
                 stash name: 'source', includes: '**/*'
+            }
 
-                post {
-                    always {
-                        cleanWs()
-                    }
+            post {
+                always {
+                    cleanWs()   // ✅ صح هنا
                 }
-
-
-         
             }
         }
         stage('Discover Microservices') {
