@@ -77,26 +77,26 @@ pipeline{
 
         stage("Restore"){
             agent {
-                kubernetes {
-                    yaml """
-            apiVersion: v1
-            kind: Pod
-            spec:
-            volumes:
-            - name: nuget-cache
-              emptyDir: {}
+    kubernetes {
+        yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  volumes:
+  - name: nuget-cache
+    emptyDir: {}
 
-            containers:
-            - name: dotnet
-                image: mcr.microsoft.com/dotnet/sdk:8.0
-                command: ["cat"]
-                tty: true
-                volumeMounts:
-                - name: nuget-cache
-                  mountPath: /nuget-cache
-            """
-                }
-            }
+  containers:
+  - name: dotnet
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    command: ["cat"]
+    tty: true
+    volumeMounts:
+    - name: nuget-cache
+      mountPath: /nuget-cache
+"""
+    }
+}
 
             steps {
                 container('dotnet') {
@@ -109,6 +109,8 @@ pipeline{
 
                         withEnv([
                             "NUGET_PACKAGES=/nuget-cache",
+                            "DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1",
+                            "DOTNET_NOLOGO=1"
                         ]) {
 
                             // مهم جدًا: إنشاء فولدر الكاش
@@ -141,6 +143,7 @@ pipeline{
 
                                             # مهم جدًا لحل مشكلة assets.json
                                             dotnet restore "\$sln" \
+                                                --force-evaluate \
                                                 --packages /nuget-cache \
                                                 --disable-parallel
                                         """
