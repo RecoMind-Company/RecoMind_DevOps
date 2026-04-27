@@ -9,7 +9,6 @@ pipeline{
         TAG = "latest"
         SERVICES_DIR = "Microservices"  // Updated path
         NVD_API_KEY = credentials('nvd-api-key-id')
-        NUGET_PACKAGES = "/nuget-cache"
         }
 
     stages {
@@ -72,92 +71,6 @@ pipeline{
                     }
                 }
                 
-            }
-        }
-
-        stage("Restore"){
-            agent {
-    kubernetes {
-        yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  volumes:
-  - name: nuget-cache
-    emptyDir: {}
-
-  containers:
-  - name: dotnet
-    image: mcr.microsoft.com/dotnet/sdk:8.0
-    command: ["cat"]
-    tty: true
-    volumeMounts:
-    - name: nuget-cache
-      mountPath: /nuget-cache
-"""
-    }
-}
-
-            steps {
-                container('dotnet') {
-                    unstash 'source'
-
-                    script {
-                        def serviceList = services.toList()
-                        int maxParallel = 3
-                        def chunks = serviceList.collate(maxParallel)
-
-                        withEnv([
-                            "NUGET_PACKAGES=/nuget-cache",
-                            "DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1",
-                            "DOTNET_NOLOGO=1"
-                        ]) {
-
-                            // مهم جدًا: إنشاء فولدر الكاش
-                            sh "mkdir -p /nuget-cache"
-
-                            int groupIndex = 1
-
-                            for (chunk in chunks) {
-                                echo "➡️ Restoring group ${groupIndex}/${chunks.size()} in parallel..."
-
-                                def restoreSteps = [:]
-
-                                for (service in chunk) {
-                                    def serviceName = service
-
-                                    restoreSteps["Restore ${serviceName}"] = {
-                                        sh """
-                                            set -e
-
-                                            cd ${SERVICES_DIR}/${serviceName}
-
-                                            sln=\$(find . -name "*.sln" | head -n 1)
-
-                                            if [ -z "\$sln" ]; then
-                                                echo "❌ No solution found in ${serviceName}"
-                                                exit 1
-                                            fi
-
-                                            echo "📦 Restoring: \$sln"
-
-                                            # مهم جدًا لحل مشكلة assets.json
-                                            dotnet restore "\$sln" \
-                                                --force-evaluate \
-                                                --packages /nuget-cache \
-                                                --disable-parallel
-                                        """
-                                    }
-                                }
-
-                                parallel restoreSteps
-                                groupIndex++
-                            }
-                        }
-
-                        echo "🎉 All services restored successfully!"
-                    }
-                }
             }
         }
 
@@ -261,87 +174,90 @@ spec:
        
 
         stage("SonarQube Analysis") {
-            agent {
-                kubernetes {
-                    yaml """
-        apiVersion: v1
-        kind: Pod
-        spec:
-          containers:
-          - name: dotnet
-            image: mcr.microsoft.com/dotnet/sdk:8.0
-            command: ["cat"]
-            tty: true
-          - name: java
-            image: eclipse-temurin:17-jdk
-            command: ["cat"]
-            tty: true
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  volumes:
+  - name: nuget-cache
+    emptyDir: {}
 
-            volumeMounts:
-            - name: nuget-cache
-              mountPath: /nuget-cache
+  containers:
+  - name: dotnet
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    command: ["cat"]
+    tty: true
+    volumeMounts:
+    - name: nuget-cache
+      mountPath: /root/.nuget/packages
 
-          volumes:
-          - name: nuget-cache
-            emptyDir: {}
-        """
-                }
-            }
+  - name: java
+    image: eclipse-temurin:17-jdk
+    command: ["cat"]
+    tty: true
+"""
+        }
+    }
 
-            steps {
-                container('dotnet') {
-                    unstash 'source'
+    steps {
+        container('dotnet') {
+            unstash 'source'
 
-                    withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
+            withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
 
-                        script {
+                script {
+                    sh '''
+                        dotnet tool install --global dotnet-sonarscanner || true
+                        export PATH="$PATH:/root/.dotnet/tools"
+                        mkdir -p /root/.sonar
+                    '''
 
-                            // install once فقط
-                            sh '''
-                                dotnet tool install --global dotnet-sonarscanner || true
-                                export PATH="$PATH:/root/.dotnet/tools"
-                                export SONAR_USER_HOME=$WORKSPACE/.sonar
-                                mkdir -p $SONAR_USER_HOME
-                            '''
+                    def serviceList = services.toList()
 
-                            def serviceList = services.toList()
+                    for (serviceName in serviceList) {
 
-                            for (serviceName in serviceList) {
+                        echo "🔍 Processing ${serviceName}"
 
-                                echo "🔍 Sonar for ${serviceName}"
+                        sh """
+                        export PATH="\$PATH:/root/.dotnet/tools"
+                        export SONAR_USER_HOME=/root/.sonar
 
-                                sh """
-                                export PATH="\$PATH:/root/.dotnet/tools"
-                                
+                        cd ${SERVICES_DIR}/${serviceName}
 
-                                cd ${SERVICES_DIR}/${serviceName}
+                        sln=\$(find . -name "*.sln" | head -n 1)
 
-                                sln=\$(find . -name "*.sln" | head -n 1)
+                        if [ -z "\$sln" ]; then
+                            echo "❌ No solution found"
+                            exit 1
+                        fi
 
-                                if [ -z "\$sln" ]; then
-                                    echo "No sln found"
-                                    exit 1
-                                fi
+                        echo "📦 RESTORE"
+                        dotnet restore "\$sln"
 
-                                dotnet sonarscanner begin \
-                                /k:"recomind-${serviceName}" \
-                                /o:"recomind-company" \
-                                /d:sonar.host.url="https://sonarcloud.io" \
-                                /d:sonar.token="\$SONAR_TOKEN"
+                        echo "🚀 SONAR BEGIN"
+                        dotnet sonarscanner begin \
+                          /k:"recomind-${serviceName}" \
+                          /o:"recomind-company" \
+                          /d:sonar.host.url="https://sonarcloud.io" \
+                          /d:sonar.token="\$SONAR_TOKEN"
 
-                                dotnet build "\$sln" -c Release --no-restore
+                        echo "🔨 BUILD"
+                        dotnet build "\$sln" -c Release --no-restore
 
-                                dotnet sonarscanner end \
-                                /d:sonar.token="\$SONAR_TOKEN"
-                                """
+                        echo "🏁 SONAR END"
+                        dotnet sonarscanner end \
+                          /d:sonar.token="\$SONAR_TOKEN"
+                        """
 
-                                echo "✅ Done: ${serviceName}"
-                            }
-                        }
+                        echo "✅ Done ${serviceName}"
                     }
                 }
             }
         }
+    }
+}
 
         stage('Achieve Services List') {
             
