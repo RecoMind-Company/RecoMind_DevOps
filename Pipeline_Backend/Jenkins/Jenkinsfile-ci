@@ -75,7 +75,7 @@ pipeline{
         }
 
 
-        stage("Restore"){
+        stage("Build"){
             agent {
                 kubernetes {
                     yaml """
@@ -96,62 +96,6 @@ pipeline{
                 container('dotnet') {
                     unstash 'source'
                     script {
-                        int maxParallel = 3  // الحد الأقصى لعدد restores متوازية
-                        def serviceList = services.toList()  // تحويل Array إلى List
-                        def chunks = serviceList.collate(maxParallel)
-
-                        int groupIndex = 1
-                        for (chunk in chunks) {
-                            echo "➡️ Restoring group ${groupIndex}/${chunks.size()} in parallel..."
-
-                            def restoreSteps = [:]
-
-                            for (service in chunk) {
-                                def serviceName = service  // مهم داخل closure
-                                restoreSteps["Restore ${serviceName}"] = {
-                                    sh """
-                                    cd ${SERVICES_DIR}/${serviceName}
-
-                                    sln=\$(find . -name "*.sln" | head -n 1)
-
-                                    echo "📦 Restoring: \$sln"
-                                    dotnet restore \$sln
-                                    """
-                                }
-                            }
-
-                            parallel restoreSteps  // تشغيل المجموعة بشكل parallel
-                            groupIndex++
-                        }
-
-                        echo "🎉 All services have been restored successfully!"
-                    }
-                }
-            }
-        }
-
-
-
-        stage("Build"){
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: dotnet
-                        image: mcr.microsoft.com/dotnet/sdk:8.0
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
-
-            steps {
-                container('dotnet') {
-                    script {
                         int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
                         def serviceList = services.toList()  // تحويل Array إلى List
                         def chunks = serviceList.collate(maxParallel)
@@ -171,7 +115,7 @@ pipeline{
                                     sln=\$(find . -name "*.sln" | head -n 1)
 
                                     echo "� Building: \$sln"
-                                    dotnet build \$sln -c Release --no-restore
+                                    dotnet build \$sln -c Release 
                                     """
                                     echo "✅ Built: ${serviceName}"
                                 }
