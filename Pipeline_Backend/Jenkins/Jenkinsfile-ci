@@ -180,12 +180,12 @@ pipeline{
         apiVersion: v1
         kind: Pod
         spec:
-        containers:
-        - name: dotnet
+          containers:
+          - name: dotnet
             image: mcr.microsoft.com/dotnet/sdk:8.0
             command: ["cat"]
             tty: true
-        - name: java
+          - name: java
             image: eclipse-temurin:17-jdk
             command: ["cat"]
             tty: true
