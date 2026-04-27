@@ -56,17 +56,21 @@ resources:
 env:
   - name: ASPNETCORE_ENVIRONMENT
     value: "Development"
-  - name: jwt__Audience
+
+
+  - name: JwtOptions__Audience
     valueFrom:
       configMapKeyRef:
         name: recomind-config
         key: jwt-Audience
-  - name: jwt__Issuers
+
+  - name: JwtOptions__Issuer
     valueFrom:
       configMapKeyRef:
         name: recomind-config
         key: jwt-Issuer
-  - name: jwt__Expire  
+        
+  - name: JwtOptions__DurationInHours
     valueFrom:
       configMapKeyRef:
         name: recomind-config
@@ -77,6 +81,7 @@ env:
       secretKeyRef:
         name: app-secrets
         key: Jwt-SecretKey
+        
   - name: ConnectionStrings__ProdcutionConnection_Plan
     valueFrom:
       secretKeyRef:
