@@ -9,6 +9,7 @@ pipeline{
         TAG = "latest"
         SERVICES_DIR = "Microservices"  // Updated path
         NVD_API_KEY = credentials('nvd-api-key-id')
+        NUGET_PACKAGES = "${WORKSPACE}/.nuget/packages"
         }
 
     stages {
@@ -71,6 +72,84 @@ pipeline{
                     }
                 }
                 
+            }
+        }
+
+        stage("Restore"){
+            agent {
+                kubernetes {
+                    yaml """
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: dotnet
+                        image: mcr.microsoft.com/dotnet/sdk:8.0
+                        command:
+                        - cat
+                        tty: true
+                    """
+                }
+            }
+
+            steps {
+                container('dotnet') {
+                    unstash 'source'
+
+                    script {
+                        def serviceList = services.toList()
+                        int maxParallel = 3
+                        def chunks = serviceList.collate(maxParallel)
+
+                        withEnv([
+                            "NUGET_PACKAGES=${NUGET_PACKAGES}",
+                            "NUGET_XMLDOC_MODE=skip"
+                        ]) {
+
+                            // مهم جدًا: إنشاء فولدر الكاش
+                            sh "mkdir -p ${NUGET_PACKAGES}"
+
+                            int groupIndex = 1
+
+                            for (chunk in chunks) {
+                                echo "➡️ Restoring group ${groupIndex}/${chunks.size()} in parallel..."
+
+                                def restoreSteps = [:]
+
+                                for (service in chunk) {
+                                    def serviceName = service
+
+                                    restoreSteps["Restore ${serviceName}"] = {
+                                        sh """
+                                            set -e
+
+                                            cd ${SERVICES_DIR}/${serviceName}
+
+                                            sln=\$(find . -name "*.sln" | head -n 1)
+
+                                            if [ -z "\$sln" ]; then
+                                                echo "❌ No solution found in ${serviceName}"
+                                                exit 1
+                                            fi
+
+                                            echo "📦 Restoring: \$sln"
+
+                                            # مهم جدًا لحل مشكلة assets.json
+                                            dotnet restore "\$sln" \
+                                                --packages ${NUGET_PACKAGES} \
+                                                --force-evaluate
+                                        """
+                                    }
+                                }
+
+                                parallel restoreSteps
+                                groupIndex++
+                            }
+                        }
+
+                        echo "🎉 All services restored successfully!"
+                    }
+                }
             }
         }
 
