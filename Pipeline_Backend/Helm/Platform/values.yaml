@@ -134,7 +134,7 @@ global:
                 port:
                   number: 8003
 
-          - path: rabbitmq(/|$)(.*)
+          - path: /rabbitmq(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
