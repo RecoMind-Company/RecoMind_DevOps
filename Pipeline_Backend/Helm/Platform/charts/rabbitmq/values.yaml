@@ -33,11 +33,10 @@ ingress:
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
       # جرب استخدام المسار المباشر بدون متغيرات $2
       nginx.ingress.kubernetes.io/rewrite-target: /
-      nginx.ingress.kubernetes.io/x-forwarded-prefix: "/rabbitmq"
     hosts:
-      - host: api.recomind.site
+      - host: rmq.recomind.site
         paths:
-        - path: /rabbitmq/
+        - path: /
           pathType: Prefix
 
           backend:
@@ -47,7 +46,7 @@ ingress:
                 number: 15672
     tls: 
       - hosts:
-        - api.recomind.site
-        secretName: recomind-tls-final-aks
+        - rmq.recomind.site
+        secretName: rabbitmq-tls-cert
 
     
