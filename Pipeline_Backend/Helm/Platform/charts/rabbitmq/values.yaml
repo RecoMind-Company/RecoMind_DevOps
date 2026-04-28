@@ -20,6 +20,11 @@ env:
 - name: RABBITMQ_ERLANG_COOKIE
   value: ThisIsAStrongErlangCookieValue123
 
+- name: RABBITMQ_DEFAULT_VHOST
+  value: /
+- name: RABBITMQ_MANAGEMENT_PATH_PREFIX
+  value: /rabbitmq
+
 service:
   name: rabbitmq-svc
   type: ClusterIP
