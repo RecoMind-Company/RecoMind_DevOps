@@ -20,11 +20,6 @@ env:
 - name: RABBITMQ_ERLANG_COOKIE
   value: ThisIsAStrongErlangCookieValue123
 
-- name: RABBITMQ_DEFAULT_VHOST
-  value: /
-- name: RABBITMQ_MANAGEMENT_PATH_PREFIX
-  value: /rabbitmq
-
 service:
   name: rabbitmq-svc
   type: ClusterIP
@@ -37,12 +32,12 @@ ingress:
       cert-manager.io/cluster-issuer: letsencrypt-prod
       nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/rewrite-target: /rabbitmq/$2
+      nginx.ingress.kubernetes.io/rewrite-target: /
       nginx.ingress.kubernetes.io/use-regex: "true"
     hosts:
       - host: api.recomind.site
         paths:
-        - path: /rabbitmq(/|$)(.*)
+        - path: /
           pathType: ImplementationSpecific
 
           backend:
