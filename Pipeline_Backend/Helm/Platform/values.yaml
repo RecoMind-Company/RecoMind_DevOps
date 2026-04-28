@@ -133,6 +133,14 @@ global:
                 name: database-settings-svc
                 port:
                   number: 8003
+
+          - path: rabbitmq(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: rabbitmq-svc
+                port:
+                  number: 5672
           
     
     

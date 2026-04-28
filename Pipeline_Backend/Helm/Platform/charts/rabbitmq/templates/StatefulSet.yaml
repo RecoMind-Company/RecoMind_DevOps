@@ -1,0 +1,54 @@
+apiVersion: app/v1
+kind: StatefulSet
+
+metadata:
+  name: {{ .Chart.Name }}
+
+spec:
+  serviceName: {{ .Chart.Name }}-svc
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.StatefulSet.image.repo }}
+        ports:
+        - containerPort: {{ .Values.StatefulSet.image.port }}
+
+        {{- with .Values.env }}
+        env:
+        {{- toYaml . | nindent 12 }}
+        {{- end }}
+
+
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.StatefulSet.volumeMounts.path}}
+
+
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+
+    spec:
+      accessModes: {{ .Values.StatefulSet.volumeClaimTemplates.accessModes}}
+      resources:
+        requests:
+          storage: {{ .Values.StatefulSet.volumeClaimTemplates.storage}}
+      
+      
+
+        
+
+
+
+
+          
