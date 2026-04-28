@@ -14,7 +14,7 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
+        {{- include "rabbitmq.labels" . | nindent 4 }}
 
     spec:
       containers:
