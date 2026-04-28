@@ -8,7 +8,7 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: amqp
+      targetPort: 15672
       protocol: TCP
       name: http
   selector:
