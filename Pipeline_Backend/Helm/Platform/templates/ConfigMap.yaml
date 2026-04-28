@@ -8,5 +8,6 @@ data:
   jwt-Audience: {{ .Values.global.ConfigMap.data.jwtAudience | quote }}
   jwt-Issuer: {{ .Values.global.ConfigMap.data.jwtIssuer | quote }}
   jwt-Expire: {{ .Values.global.ConfigMap.data.jwtExpire | quote}}
+  email-config-Email: {{ .Values.global.ConfigMap.data.Email | quote}}
   
 {{- end }}

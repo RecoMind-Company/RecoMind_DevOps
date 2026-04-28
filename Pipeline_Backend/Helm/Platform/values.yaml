@@ -13,6 +13,8 @@ global:
       jwtAudience: "https://api.recomind.site/"
       jwtIssuer: "https://api.recomind.site/"  
       jwtExpire: "2"
+      Email: "bassim.almor500@gmail.com"
+
   ingress:
     enabled: true
     className: "nginx"
