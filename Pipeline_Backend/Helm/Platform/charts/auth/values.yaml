@@ -77,6 +77,7 @@ env:
       secretKeyRef:
         name: app-secrets
         key: Jwt-SecretKey
+        
   - name: ConnectionStrings__ProdcutionConnectionString_Auth
     valueFrom:
       secretKeyRef:
@@ -97,7 +98,7 @@ env:
 
   - name: email-config__Email
     valueFrom:
-      secretKeyRef:
+      configMapKeyRef:
         name: recomind-config
         key: email-config-Email
 
