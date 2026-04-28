@@ -1,21 +1,17 @@
 apiVersion: apps/v1
 kind: StatefulSet
-
 metadata:
   name: {{ .Chart.Name }}
-
 spec:
   serviceName: {{ .Chart.Name }}-svc
   replicas: 3
   selector:
     matchLabels:
       app: {{ .Chart.Name }}
-
   template:
     metadata:
       labels:
         app: {{ .Chart.Name }}
-
     spec:
       containers:
       - name: {{ .Chart.Name }}
@@ -23,24 +19,24 @@ spec:
         ports:
         - name: amqp
           containerPort: {{ .Values.StatefulSet.image.port }}
-
         {{- with .Values.env }}
         env:
-        {{- toYaml . | nindent 12 }}
+          {{- toYaml . | nindent 10 }}
         {{- end }}
-
-
+        {{- with .Values.volumeMounts }}
         volumeMounts:
-        - name: data
-          mountPath: {{ .Values.StatefulSet.volumeMounts.path}}
-
-
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
   volumeClaimTemplates:
   - metadata:
       name: data
     spec:
       accessModes:
-      {{- toYaml .Values.StatefulSet.volumeClaimTemplates.accessModes | nindent 6 }}
+        {{- toYaml .Values.StatefulSet.volumeClaimTemplates.accessModes | nindent 8 }}
       resources:
         requests:
           storage: {{ .Values.StatefulSet.volumeClaimTemplates.storage }}
+  {{- with .Values.volumes }}
+  volumes:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}

@@ -6,11 +6,31 @@ StatefulSet:
   image:
     repo: rabbitmq:4.0-management-alpine
     port: 15672
-  volumeMounts:
-    path: /var/lib/rabbitmq
+  
   volumeClaimTemplates:
     accessModes: ["ReadWriteOnce"]
     storage: 8Gi
+
+volumeMounts:
+  - name: secrets-store
+    mountPath: "/mnt/secrets"
+    readOnly: true
+
+  - name: data
+    mountPath: "/var/lib/rabbitmq"
+
+
+volumes:
+  - name: secrets-store
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: app-secrets
+
+
+
+
 
 env:
 - name: RABBITMQ_DEFAULT_USER
