@@ -5,7 +5,7 @@ StatefulSet:
   
   image:
     repo: rabbitmq:4.0-management-alpine
-    port: 5672
+    port: 15672
   volumeMounts:
     path: /var/lib/rabbitmq
   volumeClaimTemplates:
