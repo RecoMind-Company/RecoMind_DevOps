@@ -30,18 +30,15 @@ ingress:
     className: "nginx"
     annotations: 
       cert-manager.io/cluster-issuer: letsencrypt-prod
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/use-regex: "true"
-      # استخدم هذا التنسيق لضمان عمل الـ Rewrite بدون Snippets
-      nginx.ingress.kubernetes.io/rewrite-target: /$2
-      # هذا الـ Annotation هو البديل الآمن للـ Snippet لتمرير المسار
+      # جرب استخدام المسار المباشر بدون متغيرات $2
+      nginx.ingress.kubernetes.io/rewrite-target: /
       nginx.ingress.kubernetes.io/x-forwarded-prefix: "/rabbitmq"
     hosts:
       - host: api.recomind.site
         paths:
-        - path: /rabbitmq(/|$)(.*)
-          pathType: ImplementationSpecific
+        - path: /rabbitmq/
+          pathType: prefix
 
           backend:
             service:
