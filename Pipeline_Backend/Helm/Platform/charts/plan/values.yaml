@@ -97,6 +97,4 @@ env:
   - name: Kestrel__Endpoints__Grpc__Url
     value: "http://0.0.0.0:5005"
   - name: Kestrel__Endpoints__Grpc__Protocols
-    value: "Http2"
-
-  - 
+    value: "Http2" 

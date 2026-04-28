@@ -2,7 +2,7 @@ nameOverride: "rabbitmq"
 fullnameOverride: "rabbitmq"
 
 StatefulSet:
-  replicas: 1
+  
   image:
     repo: rabbitmq:4.0-management-alpine
     port: 5672
@@ -18,9 +18,7 @@ env:
 - name: RABBITMQ_DEFAULT_PASS
   value: recomind
 - name: RABBITMQ_ERLANG_COOKIE
-  value: ThisIsAStrongErlangCookieValue123  
-  
-
+  value: ThisIsAStrongErlangCookieValue123
 
 service:
   name: rabbitmq-svc
