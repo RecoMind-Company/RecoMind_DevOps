@@ -93,3 +93,16 @@ env:
     value: "http://0.0.0.0:5011"
   - name: Kestrel__Endpoints__Grpc__Protocols
     value: "Http2"
+
+
+  - name: email-config__Email
+    valueFrom:
+      secretKeyRef:
+        name: recomind-config
+        key: email-config-Email
+
+  - name: email-config__Password
+    valueFrom:
+      secretKeyRef:
+        name: app-secrets
+        key: email-config-Password

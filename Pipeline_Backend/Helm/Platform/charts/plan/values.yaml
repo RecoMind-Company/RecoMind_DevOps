@@ -57,12 +57,12 @@ env:
   - name: ASPNETCORE_ENVIRONMENT
     value: "Development"
 
-
   - name: JwtOptions__Audience
     valueFrom:
       configMapKeyRef:
         name: recomind-config
         key: jwt-Audience
+
 
   - name: JwtOptions__Issuer
     valueFrom:
@@ -98,3 +98,5 @@ env:
     value: "http://0.0.0.0:5005"
   - name: Kestrel__Endpoints__Grpc__Protocols
     value: "Http2"
+
+  - 
