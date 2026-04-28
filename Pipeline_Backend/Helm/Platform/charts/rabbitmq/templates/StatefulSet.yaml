@@ -27,6 +27,10 @@ spec:
         volumeMounts:
           {{- toYaml . | nindent 10 }}
         {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
   volumeClaimTemplates:
   - metadata:
       name: data
@@ -36,7 +40,3 @@ spec:
       resources:
         requests:
           storage: {{ .Values.StatefulSet.volumeClaimTemplates.storage }}
-  {{- with .Values.volumes }}
-  volumes:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
