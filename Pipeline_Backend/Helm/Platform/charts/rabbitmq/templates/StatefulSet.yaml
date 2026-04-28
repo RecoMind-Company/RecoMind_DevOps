@@ -21,7 +21,8 @@ spec:
       - name: {{ .Chart.Name }}
         image: {{ .Values.StatefulSet.image.repo }}
         ports:
-        - containerPort: {{ .Values.StatefulSet.image.port }}
+        - name: amqp
+          containerPort: {{ .Values.StatefulSet.image.port }}
 
         {{- with .Values.env }}
         env:
@@ -37,18 +38,9 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: data
-
     spec:
-      accessModes: {{ .Values.StatefulSet.volumeClaimTemplates.accessModes}}
+      accessModes:
+      {{- toYaml .Values.StatefulSet.volumeClaimTemplates.accessModes | nindent 6 }}
       resources:
         requests:
-          storage: {{ .Values.StatefulSet.volumeClaimTemplates.storage}}
-      
-      
-
-        
-
-
-
-
-          
+          storage: {{ .Values.StatefulSet.volumeClaimTemplates.storage }}
