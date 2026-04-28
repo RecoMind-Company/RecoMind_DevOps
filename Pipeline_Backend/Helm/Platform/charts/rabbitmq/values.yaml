@@ -38,7 +38,7 @@ ingress:
       - host: api.recomind.site
         paths:
         - path: /rabbitmq/
-          pathType: prefix
+          pathType: Prefix
 
           backend:
             service:
