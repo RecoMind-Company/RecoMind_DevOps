@@ -14,9 +14,17 @@ StatefulSet:
 
 env:
 - name: RABBITMQ_DEFAULT_USER
-  value: recomind
+  valueFrom:
+    secretKeyRef:
+      name: app-secrets
+      key: rmq-user
+
 - name: RABBITMQ_DEFAULT_PASS
-  value: recomind
+  valueFrom:
+    secretKeyRef:
+      name: app-secrets
+      key: rmq-pass
+
 - name: RABBITMQ_ERLANG_COOKIE
   value: ThisIsAStrongErlangCookieValue123
 
