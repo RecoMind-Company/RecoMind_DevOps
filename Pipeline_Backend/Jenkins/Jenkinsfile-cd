@@ -1,15 +1,13 @@
-pipeline{
+pipeline {
     agent any
 
     environment {
-        DOCKERHUB = credentials('Docker_Hub_Backend')          // credentials من Jenkins (username/password)
         IMAGE_NAME = "redasaad1234/backend"
-        TAG = "latest"
+        TAG        = "latest"
 
-        AZURE_TENANT_ID       = credentials('TENANT_ID')
-        AZURE_CLIENT_ID       = credentials('CLIENT_ID')
-        AZURE_CLIENT_SECRET   = credentials('CLIENT_SECRET')
-
+        AZURE_TENANT_ID     = credentials('TENANT_ID')
+        AZURE_CLIENT_ID     = credentials('CLIENT_ID')
+        AZURE_CLIENT_SECRET = credentials('CLIENT_SECRET')
     }
 
     triggers {
@@ -18,48 +16,50 @@ pipeline{
                 [key: 'CHANGED_FILES', value: '$.commits[*].modified[*]']
             ],
             regexpFilterText: '$CHANGED_FILES',
-            regexpFilterExpression: 'Pipeline_Backend/Helm/Platform'  
+            regexpFilterExpression: 'Pipeline_Backend/Helm/Platform/.*'
         )
     }
 
-    stages{
-        stage("checkout Source code") {
-            
+    stages {
+        stage("Checkout Source Code") {
             steps {
-               
-                    git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind_DevOps.git' , credentialsId: 'Git_hub'
-                    stash name: 'source', includes: '**/*'
-                
-                   
-               
+                git branch: 'main',
+                    url: 'https://github.com/RecoMind-Company/RecoMind_DevOps.git',
+                    credentialsId: 'Git_hub'
             }
         }
 
-        stage("Create the secrets for pull image in Helm chart ") {
+        stage("Azure Login & AKS Connect") {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'Docker_Hub_Backend', passwordVariable: 'DOCKERHUB_PSW', usernameVariable: 'DOCKERHUB_USR')]) {
+                sh '''
+                    az login --service-principal \
+                    -u $AZURE_CLIENT_ID \
+                    -p $AZURE_CLIENT_SECRET \
+                    --tenant $AZURE_TENANT_ID
+
+                    az aks get-credentials \
+                    --resource-group aks-rg-Recomind \
+                    --name Recomind-aks \
+                    --overwrite-existing
+
+                    kubectl get nodes
+                '''
+            }
+        }
+
+        stage("Create Docker Pull Secret") {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'Docker_Hub_Backend',
+                    passwordVariable: 'DOCKERHUB_PSW',
+                    usernameVariable: 'DOCKERHUB_USR'
+                )]) {
                     sh '''
-
-                        az login --service-principal \
-                        -u $AZURE_CLIENT_ID \
-                        -p $AZURE_CLIENT_SECRET \
-                        --tenant $AZURE_TENANT_ID
-
-
-
-                        az aks get-credentials \
-                        --resource-group aks-rg-Recomind \
-                        --name Recomind-aks \
-                        --overwrite-existing
-
-                        kubectl get nodes
-
-                        echo "Creating secret..."
                         kubectl create secret docker-registry dockerhub-secret \
                         --docker-server=https://index.docker.io/v1/ \
                         --docker-username=$DOCKERHUB_USR \
                         --docker-password=$DOCKERHUB_PSW \
-                        --docker-email=redasaad010260@gamil.com \
+                        --docker-email=redasaad010260@gmail.com \
                         --namespace=default \
                         --dry-run=client -o yaml | kubectl apply -f -
 
@@ -69,41 +69,19 @@ pipeline{
             }
         }
 
-
         stage("Deploy to Kubernetes with Helm") {
             steps {
-                unstash 'source'
                 sh '''
                     set -e
-
                     cd Pipeline_Backend
 
-                    echo "🔐 Logging into Azure..."
-                    az login --service-principal \
-                    -u $AZURE_CLIENT_ID \
-                    -p $AZURE_CLIENT_SECRET \
-                    --tenant $AZURE_TENANT_ID
-
-                    echo "🔗 Connecting to AKS..."
-                    az aks get-credentials \
-                    --resource-group aks-rg-Recomind \
-                    --name Recomind-aks \
-                    --overwrite-existing
-
-                    echo "📡 Verifying cluster..."
-                    kubectl get nodes
                     kubectl get clusterissuer letsencrypt-prod
 
-                    echo "🚀 Deploying application using Helm..."
                     helm upgrade --install recomind ./Helm/Platform \
-                    --namespace default
+                    --namespace default \
+                    --set image.tag=$TAG
                 '''
             }
         }
     }
-
-
-
-
-}  
-
+}
