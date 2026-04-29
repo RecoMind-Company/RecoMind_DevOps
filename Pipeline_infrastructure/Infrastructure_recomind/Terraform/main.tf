@@ -57,9 +57,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
     environment = var.environment
   }
 }
-
-
-
 # Extra Node Pool (heavy workloads)
 resource "azurerm_kubernetes_cluster_node_pool" "extra" {
   name                  = "ainodepool"
