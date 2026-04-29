@@ -31,8 +31,19 @@ spec:
         TF_VAR_client_secret    = credentials('CLIENT_SECRET')
 
         
-        
 
+
+    }
+
+
+    triggers {
+        GenericTrigger(
+            genericVariables: [
+                [key: 'CHANGED_FILES', value: '$.commits[*].modified[*]']
+            ],
+            regexpFilterText: '$CHANGED_FILES',
+            regexpFilterExpression: 'Pipeline_infrastructure/Infrastructure_recomind/Terraform/.*'  
+        )
     }
 
     stages {
