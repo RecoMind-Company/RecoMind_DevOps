@@ -84,6 +84,8 @@ pipeline {
                     helm upgrade --install recomind ./Helm/Platform \
                     --namespace default \
                     --set image.tag=$TAG
+
+                    helm rollout restart Deployment
                 '''
             }
         }
