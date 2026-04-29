@@ -12,12 +12,24 @@ pipeline {
 
     triggers {
         GenericTrigger(
-            genericVariables: [
-                [key: 'CHANGED_FILES', value: '$.commits[*].modified[*]']
+           genericVariables: [
+                [key: 'CHANGED_FILES', value: '$.commits[*].modified[*]'],
+                [key: 'ADDED_FILES',   value: '$.commits[*].added[*]'],
+                [key: 'REMOVED_FILES', value: '$.commits[*].removed[*]']
             ],
-            regexpFilterText: '$CHANGED_FILES',
+            regexpFilterText: '$CHANGED_FILES $ADDED_FILES $REMOVED_FILES',
             regexpFilterExpression: 'Pipeline_Backend/Helm/Platform/.*'
         )
+    }
+
+    stage("Debug Trigger") {
+        steps {
+            sh '''
+                echo "Changed: $CHANGED_FILES"
+                echo "Added:   $ADDED_FILES"
+                echo "Removed: $REMOVED_FILES"
+            '''
+        }
     }
 
     stages {
