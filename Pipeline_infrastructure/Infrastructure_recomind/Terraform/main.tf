@@ -58,6 +58,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 }
 
+
+
 # Extra Node Pool (heavy workloads)
 resource "azurerm_kubernetes_cluster_node_pool" "extra" {
   name                  = "ainodepool"
