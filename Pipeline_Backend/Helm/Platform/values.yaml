@@ -169,7 +169,7 @@ ClusterIssuer:
 
 
 nodeSelector: 
-  pool: default
+  agentpool: default
 
 
 
