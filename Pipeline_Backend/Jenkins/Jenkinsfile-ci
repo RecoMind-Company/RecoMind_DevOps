@@ -173,98 +173,47 @@ pipeline{
         // }
        
 
-//         stage("SonarQube Analysis") {
-//     agent {
-//         kubernetes {
-//             yaml """
-// apiVersion: v1
-// kind: Pod
-// spec:
-//   volumes:
-//   - name: nuget-cache
-//     emptyDir: {}
+        stage("SonarQube Analysis") {
+    
+            steps {
+                
+                def scannerHome = tool 'SonarQube_Scanner'
+                
+                withSonarQubeEnv('SonarCloud_Server') {
+                    withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
 
-//   containers:
-//   - name: dotnet
-//     image: mcr.microsoft.com/dotnet/sdk:8.0
-//     command: ["cat"]
-//     tty: true
-//     volumeMounts:
-//     - name: nuget-cache
-//       mountPath: /root/.nuget/packages
+                        script {
 
-//   - name: java
-//     image: eclipse-temurin:17-jdk
-//     command: ["cat"]
-//     tty: true
-// """
-//         }
-//     }
+                            def serviceList = services.toList()
 
-//     steps {
-//         container('dotnet') {
-//             unstash 'source'
+                            for (serviceName in serviceList) {
 
-//             withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
+                                echo "🔍 Processing ${serviceName}"
 
-//                 script {
-//                     sh '''
-//                         dotnet tool install --global dotnet-sonarscanner || true
-//                         export PATH="$PATH:/root/.dotnet/tools"
-//                         mkdir -p /root/.sonar
-//                     '''
+                                sh """
 
-//                     def serviceList = services.toList()
+                                cd ${SERVICES_DIR}/${serviceName}
 
-//                     for (serviceName in serviceList) {
+                                ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.projectKey=recomind-${serviceName}-Ai \
+                                -Dsonar.projectKey=recomind-company-Ai \
+                                -Dsonar.organization=recomind-company \
+                                -Dsonar.host.url=https://sonarcloud.io \
+                                -Dsonar.sources=. \
 
-//                         echo "🔍 Processing ${serviceName}"
+                                    echo "✅ Done ${serviceName}"
 
-//                         sh """
-//                         export PATH="\$PATH:/root/.dotnet/tools"
-//                         export SONAR_USER_HOME=/root/.sonar
+                                """
 
-//                         cd ${SERVICES_DIR}/${serviceName}
-
-//                         sln=\$(find . -name "*.sln" | head -n 1)
-
-//                         if [ -z "\$sln" ]; then
-//                             echo "❌ No solution found"
-//                             exit 1
-//                         fi
-
-//                         echo "📦 RESTORE"
-//                         dotnet restore "\$sln"
-
-//                         echo "🧪 TEST + COVERAGE"
-//                         dotnet test "\$sln" \
-//                         --collect:"XPlat Code Coverage" \
-//                         --results-directory ./TestResults
-
-//                         echo "🚀 SONAR BEGIN"
-//                         dotnet sonarscanner begin \
-//                         /k:"recomind-${serviceName}" \
-//                         /o:"recomind-company" \
-//                         /d:sonar.host.url="https://sonarcloud.io" \
-//                         /d:sonar.token="\$SONAR_TOKEN" \
-//                         /d:sonar.sources="." \
-//                         /d:sonar.cs.opencover.reportsPaths="**/coverage.cobertura.xml"
-
-//                         echo "🔨 BUILD"
-//                         dotnet build "\$sln" -c Release --no-restore
-
-//                         echo "🏁 SONAR END"
-//                         dotnet sonarscanner end \
-//                           /d:sonar.token="\$SONAR_TOKEN"
-//                         """
-
-//                         echo "✅ Done ${serviceName}"
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
+                                
+                                
+                            }
+                        }
+                    }
+                }
+            
+            }
+        }
 
         stage('Achieve Services List') {
             
