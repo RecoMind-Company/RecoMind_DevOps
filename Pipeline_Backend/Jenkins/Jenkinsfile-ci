@@ -195,7 +195,7 @@ pipeline{
                                 cd ${SERVICES_DIR}/${serviceName}
 
                                 ${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=recomind-${serviceName} \
+                                -Dsonar.projectKey=recomind-${serviceName}\
                                 -Dsonar.projectKey=recomind-company \
                                 -Dsonar.organization=recomind-company \
                                 -Dsonar.host.url=https://sonarcloud.io \
