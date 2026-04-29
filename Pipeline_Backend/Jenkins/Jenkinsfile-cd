@@ -22,15 +22,6 @@ pipeline {
         )
     }
 
-    stage("Debug Trigger") {
-        steps {
-            sh '''
-                echo "Changed: $CHANGED_FILES"
-                echo "Added:   $ADDED_FILES"
-                echo "Removed: $REMOVED_FILES"
-            '''
-        }
-    }
 
     stages {
         stage("Checkout Source Code") {
