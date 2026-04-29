@@ -85,7 +85,7 @@ pipeline {
                     --namespace default \
                     --set image.tag=$TAG
 
-                    helm rollout restart Deployment
+                    kubectl rollout restart deployment
                 '''
             }
         }
