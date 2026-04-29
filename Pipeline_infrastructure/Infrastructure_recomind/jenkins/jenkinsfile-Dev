@@ -39,10 +39,12 @@ spec:
     triggers {
         GenericTrigger(
             genericVariables: [
-                [key: 'CHANGED_FILES', value: '$.commits[*].modified[*]']
+                [key: 'CHANGED_FILES', value: '$.commits[*].modified[*]'],
+                [key: 'ADDED_FILES',   value: '$.commits[*].added[*]'],
+                [key: 'REMOVED_FILES', value: '$.commits[*].removed[*]']
             ],
-            regexpFilterText: '$CHANGED_FILES',
-            regexpFilterExpression: 'Pipeline_infrastructure/Infrastructure_recomind/Terraform/.*'  
+            regexpFilterText: '$CHANGED_FILES $ADDED_FILES $REMOVED_FILES',
+            regexpFilterExpression: 'Pipeline_infrastructure/Infrastructure_recomind/Terraform/.*'
         )
     }
 
