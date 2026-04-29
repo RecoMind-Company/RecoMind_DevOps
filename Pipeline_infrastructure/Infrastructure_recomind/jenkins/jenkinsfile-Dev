@@ -43,6 +43,7 @@ spec:
                 [key: 'ADDED_FILES',   value: '$.commits[*].added[*]'],
                 [key: 'REMOVED_FILES', value: '$.commits[*].removed[*]']
             ],
+            token: 'infrastructure-trigger',
             regexpFilterText: '$CHANGED_FILES $ADDED_FILES $REMOVED_FILES',
             regexpFilterExpression: 'Pipeline_infrastructure/Infrastructure_recomind/Terraform/.*'
         )

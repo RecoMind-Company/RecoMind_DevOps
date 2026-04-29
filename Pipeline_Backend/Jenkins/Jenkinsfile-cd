@@ -17,6 +17,7 @@ pipeline {
                 [key: 'ADDED_FILES',   value: '$.commits[*].added[*]'],
                 [key: 'REMOVED_FILES', value: '$.commits[*].removed[*]']
             ],
+            token: 'backend-cd-trigger',
             regexpFilterText: '$CHANGED_FILES $ADDED_FILES $REMOVED_FILES',
             regexpFilterExpression: 'Pipeline_Backend/Helm/Platform/.*'
         )
