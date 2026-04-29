@@ -174,45 +174,32 @@ pipeline{
        
 
         stage("SonarQube Analysis") {
-    
             steps {
                 script {
                     def scannerHome = tool 'SonarQube_Scanner'
-                
+                    
                     withSonarQubeEnv('SonarCloud_Server') {
                         withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
-
-                            
-
                             def serviceList = services.toList()
 
                             for (serviceName in serviceList) {
-
                                 echo "🔍 Processing ${serviceName}"
-
+                                
                                 sh """
-
                                 cd ${SERVICES_DIR}/${serviceName}
-
                                 ${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=recomind-${serviceName}\
-                                -Dsonar.projectKey=recomind-company \
+                                -Dsonar.projectKey=recomind-${serviceName} \
                                 -Dsonar.organization=recomind-company \
                                 -Dsonar.host.url=https://sonarcloud.io \
-                                -Dsonar.sources=. \
-
-                                    echo "✅ Done ${serviceName}"
-
+                                -Dsonar.login=${SONAR_TOKEN} \
+                                -Dsonar.sources=.
+                                
+                                echo "✅ Done ${serviceName}"
                                 """
-
-                                
-                                
                             }
-                            
                         }
                     }
                 }
-            
             }
         }
 
