@@ -2,6 +2,9 @@
 nameOverride: "recomind-databasesettings"
 fullnameOverride: "recomind-databasesettings"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 1
 
 image:

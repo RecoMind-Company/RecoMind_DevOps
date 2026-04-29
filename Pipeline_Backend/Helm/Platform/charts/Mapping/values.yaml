@@ -2,6 +2,9 @@
 nameOverride: "recomind-mapping"
 fullnameOverride: "recomind-mapping"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 1
 
 image:

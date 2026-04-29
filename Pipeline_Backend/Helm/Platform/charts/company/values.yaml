@@ -2,6 +2,9 @@
 nameOverride: "recomind-company"
 fullnameOverride: "recomind-company"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 1
 
 image:

@@ -2,6 +2,9 @@
 nameOverride: "recomind-plan"
 fullnameOverride: "recomind-plan"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 2
 
 image:

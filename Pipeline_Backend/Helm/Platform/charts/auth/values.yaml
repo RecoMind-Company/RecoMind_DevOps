@@ -4,6 +4,9 @@ fullnameOverride: "recomind-auth"
 
 replicaCount: 2
 
+nodeSelector: 
+  pool: default
+
 image:
   repository: redasaad1234/backend-authenticationservice
   tag: latest

@@ -2,6 +2,9 @@
 nameOverride: "recomind-comment"
 fullnameOverride: "recomind-comment"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 1
 
 image:

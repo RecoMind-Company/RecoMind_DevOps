@@ -2,6 +2,9 @@
 nameOverride: "recomind-report"
 fullnameOverride: "recomind-report"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 2
 
 image:

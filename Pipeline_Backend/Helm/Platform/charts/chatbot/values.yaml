@@ -2,6 +2,9 @@
 nameOverride: "recomind-chatbot"
 fullnameOverride: "recomind-chatbot"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 1
 
 image:

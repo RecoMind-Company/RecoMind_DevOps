@@ -2,6 +2,9 @@
 nameOverride: "recomind-invitation"
 fullnameOverride: "recomind-invitation"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 1
 
 image:

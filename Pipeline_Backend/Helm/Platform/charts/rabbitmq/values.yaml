@@ -1,6 +1,9 @@
 nameOverride: "rabbitmq"
 fullnameOverride: "rabbitmq"
 
+nodeSelector: 
+  pool: default
+
 StatefulSet:
   
   image:

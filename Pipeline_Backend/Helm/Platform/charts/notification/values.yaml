@@ -1,6 +1,9 @@
 
 nameOverride: "recomind-notification"
-fullnameOverride: "recomind-notification`"
+fullnameOverride: "recomind-notification"
+
+nodeSelector: 
+  pool: default
 
 replicaCount: 1
 

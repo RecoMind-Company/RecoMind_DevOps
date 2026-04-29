@@ -2,6 +2,9 @@
 nameOverride: "recomind-team"
 fullnameOverride: "recomind-team"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 2
 
 image:

@@ -2,6 +2,9 @@
 nameOverride: "recomind-subscription"
 fullnameOverride: "recomind-subscription"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 1
 
 image:

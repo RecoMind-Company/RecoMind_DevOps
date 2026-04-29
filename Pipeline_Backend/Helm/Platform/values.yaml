@@ -168,6 +168,11 @@ ClusterIssuer:
   class: nginx
 
 
+nodeSelector: 
+  pool: default
+
+
+
 
 
 

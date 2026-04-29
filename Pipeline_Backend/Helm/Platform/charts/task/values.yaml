@@ -2,6 +2,9 @@
 nameOverride: "recomind-task"
 fullnameOverride: "recomind-task"
 
+nodeSelector: 
+  pool: default
+
 replicaCount: 2
 
 image:
