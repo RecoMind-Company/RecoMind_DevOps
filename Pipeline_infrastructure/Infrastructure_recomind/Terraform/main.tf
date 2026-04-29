@@ -58,18 +58,18 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 }
 
-# # Extra Node Pool (heavy workloads)
-# resource "azurerm_kubernetes_cluster_node_pool" "extra" {
-#   name                  = "highcpu"
-#   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
-#   vm_size               = var.extra_vm_size
+# Extra Node Pool (heavy workloads)
+resource "azurerm_kubernetes_cluster_node_pool" "extra" {
+  name                  = "highcpu"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
+  vm_size               = var.extra_vm_size
 
-#   auto_scaling_enabled = true
-#   min_count            = 1
-#   max_count            = 2
+  auto_scaling_enabled = true
+  min_count            = 1
+  max_count            = 2
 
-#   vnet_subnet_id = azurerm_subnet.aks_subnet.id
-# }
+  vnet_subnet_id = azurerm_subnet.aks_subnet.id
+}
 
 
 
