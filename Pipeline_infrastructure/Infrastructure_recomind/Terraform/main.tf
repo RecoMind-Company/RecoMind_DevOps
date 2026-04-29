@@ -60,7 +60,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
 # Extra Node Pool (heavy workloads)
 resource "azurerm_kubernetes_cluster_node_pool" "extra" {
-  name                  = "highcpu"
+  name                  = "AI-nodepool"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
   vm_size               = var.extra_vm_size
 
