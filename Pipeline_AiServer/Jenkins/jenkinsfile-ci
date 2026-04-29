@@ -3,9 +3,14 @@ pipeline {
 
     environment {
         DOCKERHUB = credentials('Docker_Hub_Hossam')          // credentials من Jenkins (username/password)
-        SONAR_AUTH_TOKEN = credentials('SonarQube_jenkins') // token SonarQube
+        SONAR_TOKEN = credentials('sonarCloud') // token SonarQube
         IMAGE_NAME = "hossamtaha9/recomind-ai-vector"
+        SERVICES_DIR = "src"
         TAG = "latest"
+        DEPENDENCY_CHECK_DATA = "/var/jenkins_home/caches/dependency-check"
+        NVD_API_KEY = credentials('nvd-api-key-id')
+
+
     }
 
     stages {
@@ -39,37 +44,99 @@ pipeline {
 
         stage('Checkout Source Code') {
             steps {
-                sh """
-                    cd /var/lib/jenkins/workspace/Pipline-Ai-ci/
-                    git remote prune origin
-                """
-                // checkout للكود من repo الرئيسي
-                git branch: 'main', url: 'https://github.com/RecoMind-Company/RecoMind-AI.git', credentialsId: 'Git_hub'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/RecoMind-Company/RecoMind-AI.git',
+                        credentialsId: 'Git_hub'
+                    ]],
+                    extensions: [
+                        [$class: 'PruneStaleBranch']  
+                    ]
+                ])
+
+                stash name: 'source', includes: '**/*'
+            }
+
+            post {
+                always {
+                    cleanWs()   // ✅ صح هنا
+                }
             }
         }
 
-        stage('Archive Outputs') {
+        stage('Discover Microservices') {
+            
             steps {
-                archiveArtifacts artifacts: 'src/data_embedding/docker-compose.yml', fingerprint: true
+                unstash 'source'   
+                script {
+                    // Debug: List what's in the workspace
+                    sh "echo '📁 Contents of workspace:' && pwd && ls -la"                    
+                    sh """
+                        if [ -d "${SERVICES_DIR}" ]; then
+                            echo "✅ ${SERVICES_DIR} found"
+                            ls -d ${SERVICES_DIR}/*/ 2>/dev/null || echo "⚠️ No subdirectories found in ${SERVICES_DIR}"
+                        else
+                            echo "❌ ${SERVICES_DIR} not found! Listing available directories..."
+                            ls -la
+                            exit 1
+                        fi
+                    """
+                    
+                    // Discover services
+                    services = sh(
+                        script: "ls -d ${SERVICES_DIR}/*/ 2>/dev/null | xargs -n 1 basename || echo ''",
+                        returnStdout: true
+                    ).trim().split("\n").findAll { it != '' }
+
+                    if (services.isEmpty() || services[0] == '') {
+                        echo "⚠️ No services found! Check repository structure."
+                        services = []
+                    } else {
+                        echo "🔍 Found services: ${services}"
+                    }
+                }
+                
             }
         }
-
-
-
-        
+ 
 
         stage('OWASP Dependency Check') {
-            steps {
-                sh 'mkdir -p dependency-check-report'
-                // استخدام Plugin بدلاً من CLI
-                dependencyCheck additionalArguments: '--scan . --format XML --out dependency-report',
-                                odcInstallation: 'OWASP-Dependency' // الاسم اللي اخترته في Jenkins
-            }
-        }
 
-        stage('Archive Dependency Report') {
+            agent any   // أو نفس agent بتاعك
+
             steps {
-                archiveArtifacts artifacts: 'dependency-report/**', allowEmptyArchive: true
+
+                unstash 'source'
+
+                script {
+
+                    def reportDir = "dependency-report"
+                    sh "mkdir -p ${reportDir}"
+
+                    echo "🔍 Running OWASP scan on full repository..."
+
+                    dependencyCheck(
+                        additionalArguments: """
+                            --scan .
+                            --format HTML
+                            --format XML
+                            --out ${reportDir}
+                            --data /var/lib/jenkins/caches/dependency-check
+                            --nvdApiKey ${NVD_API_KEY}
+                        """,
+                        odcInstallation: 'OWASP-Dependency'
+                    )
+
+                    echo "📄 Report generated in: ${reportDir}"
+                }
+            }
+
+            post {
+                always {
+                    archiveArtifacts artifacts: 'dependency-report/**/*', allowEmptyArchive: true
+                }
             }
         }
 
@@ -93,15 +160,6 @@ pipeline {
                 }
             }
         }
-
-        // stage('Quality Gate') {
-        //     steps {
-        //         timeout(time: 15, unit: 'MINUTES') {
-        //             // ✅ الآن هيشتغل صح لأن الـ scan كان جوا withSonarQubeEnv
-        //             waitForQualityGate abortPipeline: true
-        //         }
-        //     }
-        // }
 
         stage("Build Docker Image") {
             parallel {
