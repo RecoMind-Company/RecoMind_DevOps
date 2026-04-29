@@ -43,7 +43,11 @@ resource "azurerm_kubernetes_cluster" "aks" {
     min_count            = var.min_count
     max_count            = var.max_count
     vnet_subnet_id       = azurerm_subnet.aks_subnet.id
+    node_labels = {
+    "pool" = "default"
   }
+  }
+  
 
   identity {
     type = "SystemAssigned"
@@ -53,11 +57,16 @@ resource "azurerm_kubernetes_cluster" "aks" {
     network_plugin = "azure"
   }
 
+  # ✅ أضف الـ addon ده
+  key_vault_secrets_provider {
+    secret_rotation_enabled = true
+  }
+
   tags = {
     environment = var.environment
   }
 }
-# Extra Node Pool (heavy workloads)
+
 resource "azurerm_kubernetes_cluster_node_pool" "extra" {
   name                  = "ainodepool"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
@@ -68,6 +77,11 @@ resource "azurerm_kubernetes_cluster_node_pool" "extra" {
   max_count            = 2
 
   vnet_subnet_id = azurerm_subnet.aks_subnet.id
+
+  # ✅ عشان الـ pods تعرف تتوجه للـ pool الصح
+  node_labels = {
+    "pool" = "ainodepool"
+  }
 }
 
 
