@@ -81,7 +81,7 @@ env:
         name: app-secrets
         key: Jwt-SecretKey
         
-  - name: ConnectionStrings__ChatbotService_Db
+  - name: ConnectionStrings__ProductionConnection_Chatbot
     valueFrom:
       secretKeyRef:
         name: app-secrets
