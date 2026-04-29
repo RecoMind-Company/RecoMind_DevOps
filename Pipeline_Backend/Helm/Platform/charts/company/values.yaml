@@ -81,7 +81,7 @@ env:
         name: app-secrets
         key: Jwt-SecretKey
         
-  - name: ConnectionStrings__ProdcutionConnection_Company
+  - name: ConnectionStrings__CompanyService_Db
     valueFrom:
       secretKeyRef:
         name: app-secrets
