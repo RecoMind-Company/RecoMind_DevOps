@@ -75,61 +75,61 @@ pipeline{
         }
 
 
-        stage("Build"){
-            agent {
-                kubernetes {
-                    yaml """
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: dotnet
-                        image: mcr.microsoft.com/dotnet/sdk:8.0
-                        command:
-                        - cat
-                        tty: true
-                    """
-                }
-            }
+        // stage("Build"){
+        //     agent {
+        //         kubernetes {
+        //             yaml """
+        //             apiVersion: v1
+        //             kind: Pod
+        //             spec:
+        //               containers:
+        //               - name: dotnet
+        //                 image: mcr.microsoft.com/dotnet/sdk:8.0
+        //                 command:
+        //                 - cat
+        //                 tty: true
+        //             """
+        //         }
+        //     }
 
-            steps {
-                container('dotnet') {
-                    unstash 'source'
-                    script {
-                        int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
-                        def serviceList = services.toList()  // تحويل Array إلى List
-                        def chunks = serviceList.collate(maxParallel)
+        //     steps {
+        //         container('dotnet') {
+        //             unstash 'source'
+        //             script {
+        //                 int maxParallel = 3  // الحد الأقصى لعدد builds متوازية
+        //                 def serviceList = services.toList()  // تحويل Array إلى List
+        //                 def chunks = serviceList.collate(maxParallel)
 
-                        int groupIndex = 1
-                        for (chunk in chunks) {
-                            echo "➡️ Building group ${groupIndex}/${chunks.size()} in parallel..."
+        //                 int groupIndex = 1
+        //                 for (chunk in chunks) {
+        //                     echo "➡️ Building group ${groupIndex}/${chunks.size()} in parallel..."
 
-                            def buildSteps = [:]
+        //                     def buildSteps = [:]
 
-                            for (service in chunk) {
-                                def serviceName = service  // مهم داخل closure
-                                buildSteps["Build ${serviceName}"] = {
-                                    sh """
-                                    cd ${SERVICES_DIR}/${serviceName}
+        //                     for (service in chunk) {
+        //                         def serviceName = service  // مهم داخل closure
+        //                         buildSteps["Build ${serviceName}"] = {
+        //                             sh """
+        //                             cd ${SERVICES_DIR}/${serviceName}
 
-                                    sln=\$(find . -name "*.sln" | head -n 1)
+        //                             sln=\$(find . -name "*.sln" | head -n 1)
 
-                                    echo "� Building: \$sln"
-                                    dotnet build \$sln -c Release 
-                                    """
-                                    echo "✅ Built: ${serviceName}"
-                                }
-                            }
+        //                             echo "� Building: \$sln"
+        //                             dotnet build \$sln -c Release 
+        //                             """
+        //                             echo "✅ Built: ${serviceName}"
+        //                         }
+        //                     }
 
-                            parallel buildSteps  // تشغيل المجموعة بشكل parallel
-                            groupIndex++
-                        }
+        //                     parallel buildSteps  // تشغيل المجموعة بشكل parallel
+        //                     groupIndex++
+        //                 }
 
-                        echo "🎉 All services have been built successfully!"
-                    }
-                }
-            }
-        }
+        //                 echo "🎉 All services have been built successfully!"
+        //             }
+        //         }
+        //     }
+        // }
 
         
 
