@@ -134,137 +134,137 @@ pipeline{
         
 
 
-        stage('OWASP Dependency Check') {
+        // stage('OWASP Dependency Check') {
 
-            agent any   // أو نفس agent بتاعك
+        //     agent any   // أو نفس agent بتاعك
 
-            steps {
+        //     steps {
 
-                unstash 'source'
+        //         unstash 'source'
 
-                script {
+        //         script {
 
-                    def reportDir = "dependency-report"
-                    sh "mkdir -p ${reportDir}"
+        //             def reportDir = "dependency-report"
+        //             sh "mkdir -p ${reportDir}"
 
-                    echo "🔍 Running OWASP scan on full repository..."
+        //             echo "🔍 Running OWASP scan on full repository..."
 
-                    dependencyCheck(
-                        additionalArguments: """
-                            --scan .
-                            --format HTML
-                            --format XML
-                            --out ${reportDir}
-                            --data /var/lib/jenkins/caches/dependency-check
-                            --nvdApiKey ${NVD_API_KEY}
-                        """,
-                        odcInstallation: 'OWASP-Dependency'
-                    )
+        //             dependencyCheck(
+        //                 additionalArguments: """
+        //                     --scan .
+        //                     --format HTML
+        //                     --format XML
+        //                     --out ${reportDir}
+        //                     --data /var/lib/jenkins/caches/dependency-check
+        //                     --nvdApiKey ${NVD_API_KEY}
+        //                 """,
+        //                 odcInstallation: 'OWASP-Dependency'
+        //             )
 
-                    echo "📄 Report generated in: ${reportDir}"
-                }
-            }
+        //             echo "📄 Report generated in: ${reportDir}"
+        //         }
+        //     }
 
-            post {
-                always {
-                    archiveArtifacts artifacts: 'dependency-report/**/*', allowEmptyArchive: true
-                }
-            }
-        }
+        //     post {
+        //         always {
+        //             archiveArtifacts artifacts: 'dependency-report/**/*', allowEmptyArchive: true
+        //         }
+        //     }
+        // }
        
 
-        stage("SonarQube Analysis") {
-    agent {
-        kubernetes {
-            yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  volumes:
-  - name: nuget-cache
-    emptyDir: {}
+//         stage("SonarQube Analysis") {
+//     agent {
+//         kubernetes {
+//             yaml """
+// apiVersion: v1
+// kind: Pod
+// spec:
+//   volumes:
+//   - name: nuget-cache
+//     emptyDir: {}
 
-  containers:
-  - name: dotnet
-    image: mcr.microsoft.com/dotnet/sdk:8.0
-    command: ["cat"]
-    tty: true
-    volumeMounts:
-    - name: nuget-cache
-      mountPath: /root/.nuget/packages
+//   containers:
+//   - name: dotnet
+//     image: mcr.microsoft.com/dotnet/sdk:8.0
+//     command: ["cat"]
+//     tty: true
+//     volumeMounts:
+//     - name: nuget-cache
+//       mountPath: /root/.nuget/packages
 
-  - name: java
-    image: eclipse-temurin:17-jdk
-    command: ["cat"]
-    tty: true
-"""
-        }
-    }
+//   - name: java
+//     image: eclipse-temurin:17-jdk
+//     command: ["cat"]
+//     tty: true
+// """
+//         }
+//     }
 
-    steps {
-        container('dotnet') {
-            unstash 'source'
+//     steps {
+//         container('dotnet') {
+//             unstash 'source'
 
-            withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
+//             withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
 
-                script {
-                    sh '''
-                        dotnet tool install --global dotnet-sonarscanner || true
-                        export PATH="$PATH:/root/.dotnet/tools"
-                        mkdir -p /root/.sonar
-                    '''
+//                 script {
+//                     sh '''
+//                         dotnet tool install --global dotnet-sonarscanner || true
+//                         export PATH="$PATH:/root/.dotnet/tools"
+//                         mkdir -p /root/.sonar
+//                     '''
 
-                    def serviceList = services.toList()
+//                     def serviceList = services.toList()
 
-                    for (serviceName in serviceList) {
+//                     for (serviceName in serviceList) {
 
-                        echo "🔍 Processing ${serviceName}"
+//                         echo "🔍 Processing ${serviceName}"
 
-                        sh """
-                        export PATH="\$PATH:/root/.dotnet/tools"
-                        export SONAR_USER_HOME=/root/.sonar
+//                         sh """
+//                         export PATH="\$PATH:/root/.dotnet/tools"
+//                         export SONAR_USER_HOME=/root/.sonar
 
-                        cd ${SERVICES_DIR}/${serviceName}
+//                         cd ${SERVICES_DIR}/${serviceName}
 
-                        sln=\$(find . -name "*.sln" | head -n 1)
+//                         sln=\$(find . -name "*.sln" | head -n 1)
 
-                        if [ -z "\$sln" ]; then
-                            echo "❌ No solution found"
-                            exit 1
-                        fi
+//                         if [ -z "\$sln" ]; then
+//                             echo "❌ No solution found"
+//                             exit 1
+//                         fi
 
-                        echo "📦 RESTORE"
-                        dotnet restore "\$sln"
+//                         echo "📦 RESTORE"
+//                         dotnet restore "\$sln"
 
-                        echo "🧪 TEST + COVERAGE"
-                        dotnet test "\$sln" \
-                        --collect:"XPlat Code Coverage" \
-                        --results-directory ./TestResults
+//                         echo "🧪 TEST + COVERAGE"
+//                         dotnet test "\$sln" \
+//                         --collect:"XPlat Code Coverage" \
+//                         --results-directory ./TestResults
 
-                        echo "🚀 SONAR BEGIN"
-                        dotnet sonarscanner begin \
-                        /k:"recomind-${serviceName}" \
-                        /o:"recomind-company" \
-                        /d:sonar.host.url="https://sonarcloud.io" \
-                        /d:sonar.token="\$SONAR_TOKEN" \
-                        /d:sonar.sources="." \
-                        /d:sonar.cs.opencover.reportsPaths="**/coverage.cobertura.xml"
+//                         echo "🚀 SONAR BEGIN"
+//                         dotnet sonarscanner begin \
+//                         /k:"recomind-${serviceName}" \
+//                         /o:"recomind-company" \
+//                         /d:sonar.host.url="https://sonarcloud.io" \
+//                         /d:sonar.token="\$SONAR_TOKEN" \
+//                         /d:sonar.sources="." \
+//                         /d:sonar.cs.opencover.reportsPaths="**/coverage.cobertura.xml"
 
-                        echo "🔨 BUILD"
-                        dotnet build "\$sln" -c Release --no-restore
+//                         echo "🔨 BUILD"
+//                         dotnet build "\$sln" -c Release --no-restore
 
-                        echo "🏁 SONAR END"
-                        dotnet sonarscanner end \
-                          /d:sonar.token="\$SONAR_TOKEN"
-                        """
+//                         echo "🏁 SONAR END"
+//                         dotnet sonarscanner end \
+//                           /d:sonar.token="\$SONAR_TOKEN"
+//                         """
 
-                        echo "✅ Done ${serviceName}"
-                    }
-                }
-            }
-        }
-    }
-}
+//                         echo "✅ Done ${serviceName}"
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
 
         stage('Achieve Services List') {
             
