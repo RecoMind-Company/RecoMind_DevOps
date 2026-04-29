@@ -176,13 +176,13 @@ pipeline{
         stage("SonarQube Analysis") {
     
             steps {
+                script {
+                    def scannerHome = tool 'SonarQube_Scanner'
                 
-                def scannerHome = tool 'SonarQube_Scanner'
-                
-                withSonarQubeEnv('SonarCloud_Server') {
-                    withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv('SonarCloud_Server') {
+                        withCredentials([string(credentialsId: 'sonarCloud', variable: 'SONAR_TOKEN')]) {
 
-                        script {
+                            
 
                             def serviceList = services.toList()
 
@@ -208,6 +208,7 @@ pipeline{
                                 
                                 
                             }
+                            
                         }
                     }
                 }
