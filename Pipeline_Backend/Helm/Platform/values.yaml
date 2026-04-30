@@ -110,7 +110,7 @@ global:
                 port:
                   number: 8010
 
-          - path: /api/(Notification)(/|$)(.*)
+          - path: /api/(Notifications)(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
